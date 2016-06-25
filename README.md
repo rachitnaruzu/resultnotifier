@@ -26,7 +26,7 @@ open /var/resultnotifier/backend/extractbeta.py
 
 implement the method fetch
 
-#### Step 1 : [Installing PostgreSQL database]
+#### Step 2 : [Installing PostgreSQL database]
 
 We will use PostgreSQL database with resultnotifier. The PostgreSQL installation procedure is taken from [this](https://www.digitalocean.com/community/tutorials/how-to-use-postgresql-with-your-django-application-on-ubuntu-14-04) link:
 
@@ -46,7 +46,7 @@ We will use PostgreSQL database with resultnotifier. The PostgreSQL installation
     exit
    
     
-#### Step 2: [Setting up resultnotifier platform]
+#### Step 3: [Setting up resultnotifier platform]
 
     cd /var
     sudo git clone https://github.com/rachitnaruzu/resultnotifier.git
@@ -89,7 +89,7 @@ set the following variables:
 
 	server_name <RESULTNOTIFIER_DOMAIN>; # without quotes
 	
-#### Step 3: [Setting up nginx]
+#### Step 4: [Setting up nginx]
 
     sudo apt-get install nginx
     
@@ -98,7 +98,7 @@ copy the files to specific locations:
     sudo cp /var/resultnotifier/backend/resultnotifier_nginx.conf /etc/nginx/sites-enabled
     sudo cp /var/resultnotifier/backend/resultnotifier_uwsgi.conf /etc/init
 
-#### Step 4: [Initialize Servers]    
+#### Step 5: [Initialize Servers]    
 
 initialize directories:
 
@@ -124,10 +124,9 @@ initialize webscrape_job:
 	01 * * * * /var/resultnotifier/backend/venv/bin/python /var/resultnotifier/backend/notification.py
 	*/5 * * * * /var/resultnotifier/backend/venv/bin/python /var/resultnotifier/backend/update_recent_viewed.py
 
+All Done.
 
-Almost Done.
-
-#### Step 7 : [Restart Server]
+#### Step 6: [Restart Server]
 
 if you restart your os, you may have to rerun the servers:
     

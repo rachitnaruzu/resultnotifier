@@ -78,7 +78,7 @@ def topmost():
     authenticate()
     return json.dumps(get_topmost_files())
     
-@app.route('/updateselfviews/',methods=['POST'])  
+@app.route('/updateselfviews/',methods=['POST'])
 def updateselfviews():
     authenticate()
     selfviews = json.loads(request.form['selfviews'])
