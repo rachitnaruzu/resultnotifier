@@ -47,6 +47,7 @@ def get_registration_ids():
 def send(notifications, registration_ids):
     for notification in notifications:
         data = {'registration_ids':registration_ids,'data':notification}
+        resp = rq.post(url, data=json.dumps(data), headers=headers)
         print(resp.status_code, resp.reason)
 
 def send_notifications(registration_ids,notifications):

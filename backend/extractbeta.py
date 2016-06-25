@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
     
 '''
 
-A list of all the currenttly available results.
+return a list of all the currenttly available data (result, notice, schedule, etc.....
 
 implement this method to return a list in this format (ex: a webscrape logic):
 [

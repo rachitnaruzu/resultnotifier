@@ -58,9 +58,9 @@ open /var/resultnotifier/backend/config.py:
 set the following variables:
  
     DATABASE_USER = '<DATABASE_USER>'
-	DATABASE_PASSWORD = '<DATABASE_PASSWORD>'
-	DATABASE_HOST = '<DATABASE_HOST>'
-	DATABASE_PORT = '<DATABASE_PORT>'
+	DATABASE_PASSWORD = '<RESULTNOTIFIER_DATABASE_PASSWORD>'
+	DATABASE_HOST = '<DATABASE_HOST>' # may be 127.0.0.1 or 0.0.0.0
+	DATABASE_PORT = '<DATABASE_PORT>' # generally '5432'
 	DATABASE_NAME = '<DATABASE_NAME>'
 	SECRET_KEY = '<SECRET_KEY>' # should be same in the app as well as in backend
 	GCM_API_KEY = '<GCM_API_KEY>'
@@ -121,8 +121,8 @@ initialize webscrape_job:
 
 	sudo crontab -e # select vim if asked	
 	# add following lines to crontab
-	01 * * * * /var/resultnotifier/backend/notification.py
-	*/5 * * * * /var/resultnotifier/backend/update_recent_viewed.py
+	01 * * * * /var/resultnotifier/backend/venv/bin/python /var/resultnotifier/backend/notification.py
+	*/5 * * * * /var/resultnotifier/backend/venv/bin/python /var/resultnotifier/backend/update_recent_viewed.py
 
 
 Almost Done.

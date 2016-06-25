@@ -1,5 +1,6 @@
 import os
 import psycopg2
+import config
 
 INSERT_CMD = "INSERT INTO users (hash,registrationid) VALUES (%s,%s);"
 FETCH_CMD1 = "SELECT registrationid FROM users;"
@@ -29,12 +30,29 @@ views FROM files WHERE avghits > 0 ORDER BY avghits DESC, views OFFSET %s LIMIT 
 GET_RECENT_FILES_FILTER_CMD_PREFIX = "SELECT fileid,displayname,url,datatype,filetype,datecreated,views FROM files WHERE datatype IN "
 GET_RECENT_FILES_FILTER_CMD_SUFFIX = " AND avghits > 0 ORDER BY avghits DESC, displayname OFFSET %s LIMIT 10;"
 
+CREATE_FILES_TABLE = """ CREATE TABLE files (
+    fileid character varying(200) NOT NULL,
+    displayname character varying(200),
+    url character varying(200),
+    datatype character varying(200),
+    filetype character varying(200),
+    datecreated timestamp without time zone,
+    views integer DEFAULT 0,
+    oldviews integer DEFAULT 0,
+    avghits real DEFAULT 0.00
+); """
+
+CREATE_USERS_TABLE = """ CREATE TABLE users (
+    registrationid character varying(200) NOT NULL,
+    hash character varying(200)
+); """
+
 class DatabaseUtility(object):
 
     def make_connection(self):
         self.conn = psycopg2.connect(
             database = config.DATABASE_NAME,
-            user = config.DATABASE_URL,
+            user = config.DATABASE_USER,
             password = config.DATABASE_PASSWORD,
             host = config.DATABASE_HOST,
             port = config.DATABASE_PORT
@@ -46,6 +64,10 @@ class DatabaseUtility(object):
     def create_table(cur):
         cur.execute(CREATE_CMD)
     '''
+    
+    def createtables(self):
+        self.cur.execute(CREATE_USERS_TABLE)
+        self.cur.execute(CREATE_FILES_TABLE)
     
     def commit(self):
         self.conn.commit()
