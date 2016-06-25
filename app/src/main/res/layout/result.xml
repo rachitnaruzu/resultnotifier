@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout
+    android:id="@+id/myCoordinatorLayout"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <RelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/main_fragment"
+        tools:context=".DeviceFragment">
+
+        <android.support.v4.widget.SwipeRefreshLayout
+            android:id="@+id/swiperefresh"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ListView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/main_list_bg"
+                android:clickable="false"
+                android:dividerHeight="1dp"
+                android:divider="@color/main_list_divider_color"
+                android:id="@+id/listview">
+            </ListView>
+
+        </android.support.v4.widget.SwipeRefreshLayout>
+        
+        <!--ProgressBar
+            android:id="@+id/loadingSpinner"
+            android:indeterminate="true"
+            android:layout_centerInParent="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" /-->
+
+        <ImageView
+            android:id="@+id/no_network_icon"
+            android:layout_centerInParent="true"
+            android:layout_above="@+id/no_network_text"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:src="@drawable/ic_error_black_36dp"
+            android:tint="#939393"/>
+
+        <TextView
+            android:id="@+id/no_network_text"
+            android:layout_centerInParent="true"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:textSize="15sp"
+            android:text="No Network"/>
+
+        <!--Button
+            android:id="@+id/retry_button"
+            android:layout_centerInParent="true"
+            android:layout_height="25dp"
+            android:layout_width="50dp"
+            android:background="#516f6f6f"
+            android:textSize="13sp"
+            android:text="Retry"/-->
+
+        <TextView
+            android:id="@+id/no_content"
+            android:layout_centerInParent="true"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:textSize="15sp"
+            android:text="Nothing to display"/>
+
+    </RelativeLayout>
+
+</android.support.design.widget.CoordinatorLayout>
+
+<!--
+    android:dividerHeight="10dp"
+    android:drawSelectorOnTop="false"
+    android:paddingLeft="5dp"
+    android:paddingRight="5dp"
+    android:paddingTop="10dp"
+    -->

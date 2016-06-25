@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="100dp"
+    android:background="@color/white">
+
+    <ProgressBar
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:id="@+id/progressbar"
+        android:visibility="invisible"
+        style="@android:style/Widget.ProgressBar.Horizontal" />
+
+    <TextView
+        android:id="@+id/dataTypeIcon"
+        android:layout_width="70dp"
+        android:layout_height="match_parent"
+        android:layout_margin="12dp"
+        android:tint = "#5e5e5e" />
+
+    <ImageView
+        android:id="@+id/checkIcon"
+        android:layout_width="70dp"
+        android:layout_height="match_parent"
+        android:layout_margin="12dp"
+        android:src="@drawable/ic_check_white_48dp"
+        android:background="#5e5e5e"
+        android:tint = "#5e5e5e" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:id="@+id/text"
+        android:background="@color/transparent"
+        android:text="ME BE PO PO PO PO"
+        android:layout_toRightOf="@id/dataTypeIcon"
+        android:padding="12dp"
+        android:textColor="#000000" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/views"
+        android:background="@color/transparent"
+        android:text="12.5K views"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="12dp"
+        android:textSize="13sp"
+        android:textColor="#0aa0ff" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/date"
+        android:background="@color/transparent"
+        android:text="31, January, 2016"
+        android:textSize="13sp"
+        android:textColor="#545454"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginBottom="12dp" />
+
+</RelativeLayout>

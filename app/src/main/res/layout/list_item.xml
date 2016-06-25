@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="80dp"
+    android:background="@color/white">
+
+    <ProgressBar
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:id="@+id/progressbar"
+        style="@android:style/Widget.ProgressBar.Horizontal" />
+
+    <ImageView
+        android:id="@+id/checkIcon"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:src="@drawable/ic_check_white_48dp"
+        android:background="@drawable/check_box_icon_bg" />
+
+    <TextView
+        android:id="@+id/dataTypeIcon"
+        android:background="@drawable/datatype_icon_bg"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:text="N"
+        android:textColor="@color/main_list_data_type_icon_text_color"
+        android:textSize="20sp"
+        android:gravity="center"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+         />
+
+
+
+    <TextView
+        android:layout_width="200dp"
+        android:layout_height="78dp"
+        android:id="@+id/text"
+        android:background="@color/transparent"
+        android:text="ME BE PO PO PO PO"
+        android:layout_toRightOf="@id/dataTypeIcon"
+        android:layout_toEndOf="@id/dataTypeIcon"
+        android:padding="12dp"
+        android:textSize="12sp"
+        android:textColor="@color/main_list_text_color" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:id="@+id/views"
+        android:background="@drawable/counter_bg"
+        android:text="12.5K"
+        android:layout_marginTop="14dp"
+        android:layout_toLeftOf="@+id/views_text"
+        android:layout_toStartOf="@+id/views_text"
+        android:textSize="10sp"
+        android:textColor="@color/counter_text_color" />
+
+    <TextView android:id="@+id/views_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@color/transparent"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="12dp"
+        android:layout_marginRight="12dp"
+        android:layout_marginLeft="3dp"
+        android:textSize="12sp"
+        android:gravity="center"
+        android:text="views"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/date"
+        android:background="@color/transparent"
+        android:text="31, January, 2016"
+        android:textSize="12sp"
+        android:textColor="@color/main_list_datecreated_color"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="50dp"
+        android:layout_marginRight="10dp" />
+
+</RelativeLayout>

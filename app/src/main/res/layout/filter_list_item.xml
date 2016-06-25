@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="60dp" >
+
+    <TextView
+        android:id="@+id/filter_data_type"
+        android:layout_width="wrap_content"
+        android:layout_marginLeft="8dp"
+        android:layout_marginStart="8dp"
+        android:text="Hello"
+        android:gravity="center_vertical"
+        android:layout_height="match_parent" />
+
+    <CheckBox
+        android:layout_width="wrap_content"
+        android:gravity="center"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_height="match_parent"
+        android:id="@+id/filter_checkBox" />
+
+</RelativeLayout>

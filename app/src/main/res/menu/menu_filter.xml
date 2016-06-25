@@ -1,0 +1,13 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.resultnotifier.main.FilterActivity">
+    <item
+        android:id="@+id/filter_action_save"
+        android:icon="@drawable/ic_check_white_48dp"
+        android:title="Save"
+        android:orderInCategory="100"
+        app:showAsAction="ifRoom" />
+</menu>
+
+<!-- ic_check_white_48dp -->
