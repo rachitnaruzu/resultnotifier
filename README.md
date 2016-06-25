@@ -125,7 +125,7 @@ initialize webscrape_job:
 	*/5 * * * * /var/resultnotifier/backend/update_recent_viewed.py
 
 
-Phew !! All done, now go to \<RESULTNOTIFIER_DOMAIN\> and login using admin credentials.
+Almost Done.
 
 #### Step 7 : [Restart Server]
 
