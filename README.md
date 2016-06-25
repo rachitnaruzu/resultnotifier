@@ -178,7 +178,7 @@ replacing app icon:
 
 	replace resultnotifier/app/src/main/res/drwable/ic_notification.png with the icon you desire but of same name.
 	
-#### Step 5: Build the app
+#### Step 5: [Build the app]
 
 Build the app by clicking on the build button in Android Studio.
 
