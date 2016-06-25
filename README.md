@@ -28,7 +28,7 @@ implement the method fetch
 
 #### Step 1 : [Installing PostgreSQL database]
 
-We will use PostgreSQL database with codearena. The PostgreSQL installation procedure is taken from [this](https://www.digitalocean.com/community/tutorials/how-to-use-postgresql-with-your-django-application-on-ubuntu-14-04) link:
+We will use PostgreSQL database with resultnotifier. The PostgreSQL installation procedure is taken from [this](https://www.digitalocean.com/community/tutorials/how-to-use-postgresql-with-your-django-application-on-ubuntu-14-04) link:
 
     sudo apt-get update
 	sudo apt-get install postgresql postgresql-contrib
