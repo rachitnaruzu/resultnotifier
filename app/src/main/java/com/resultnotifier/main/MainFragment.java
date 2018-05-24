@@ -3,11 +3,14 @@ package com.resultnotifier.main;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.FileProvider;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Base64;
 import android.util.Log;
@@ -42,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
@@ -349,16 +353,31 @@ public abstract class MainFragment extends Fragment {
             snackbar.show();
             return;
         }
-        Intent intent = new Intent(Intent.ACTION_VIEW);
         MimeTypeMap myMime = MimeTypeMap.getSingleton();
         String mimeType = myMime.getMimeTypeFromExtension(fileData.filetype);
-        intent.setDataAndType(Uri.fromFile(file), mimeType);
+
+        Uri apkURI = FileProvider.getUriForFile(
+                mainActivity, mainActivity.getPackageName() + ".provider", file);
+
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setDataAndType(apkURI, mimeType);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+        grantAllUriPermissions(mainActivity, intent, apkURI);
         try{
             startActivity(intent);
         } catch (android.content.ActivityNotFoundException ex){
             mSnackbar.setText("No app found to open the file");
             mSnackbar.show();
+        }
+    }
+
+    private void grantAllUriPermissions(Context context, Intent intent, Uri uri) {
+        List<ResolveInfo> resInfoList = context.getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+        for (ResolveInfo resolveInfo : resInfoList) {
+            String packageName = resolveInfo.activityInfo.packageName;
+            context.grantUriPermission(packageName, uri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
         }
     }
 
