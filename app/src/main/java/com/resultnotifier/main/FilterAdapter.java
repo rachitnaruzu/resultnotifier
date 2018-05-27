@@ -10,44 +10,37 @@ import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
-
 import java.util.ArrayList;
 
-/**
- * Created by rachitnaruzu on 03-06-2016.
- */
 public class FilterAdapter extends BaseAdapter {
 
-    Activity mainActivity;
-    ArrayList<FilterItem> filterItems;
-    LayoutInflater inflater;
-    DatabaseUtility dbUtil;
-    private CheckBox checkBox;
-    private FilterItem current_filterItem;
+    private final Activity mMainActivity;
+    private final ArrayList<FilterItem> mFilterItems;
+    private final DatabaseUtility mDbUtil;
+    private LayoutInflater mInflater;
 
-    public FilterAdapter(Activity mainActivity){
-        this.mainActivity = mainActivity;
-        inflater = null;
-        this.filterItems = new ArrayList<>();
-        dbUtil = DatabaseUtility.getInstance(mainActivity.getApplicationContext());
-        filterItems = dbUtil.getAllFilterItems();
+    public FilterAdapter(final Activity mainActivity) {
+        mMainActivity = mainActivity;
+        mInflater = null;
+        mDbUtil = DatabaseUtility.getInstance(mMainActivity.getApplicationContext());
+        mFilterItems = mDbUtil.getAllFilterItems();
         notifyDataSetChanged();
     }
 
-    public void updateDatabase(){
-        for(FilterItem filterItem : filterItems){
-            dbUtil.updateDatatypeCheck(filterItem);
+    public void updateDatabase() {
+        for (FilterItem filterItem : mFilterItems) {
+            mDbUtil.updateDatatypeCheck(filterItem);
         }
     }
 
     @Override
     public int getCount() {
-        return filterItems.size();
+        return mFilterItems.size();
     }
 
     @Override
     public Object getItem(int position) {
-        return filterItems.get(position);
+        return mFilterItems.get(position);
     }
 
     @Override
@@ -56,23 +49,24 @@ public class FilterAdapter extends BaseAdapter {
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public View getView(final int position, final View convertView, final ViewGroup parent) {
         View vi = convertView;
-        if (inflater == null)
-            inflater = (LayoutInflater) mainActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        if (mInflater == null)
+            mInflater = (LayoutInflater) mMainActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         if (vi == null)
-            vi = inflater.inflate(R.layout.filter_list_item, null);
+            vi = mInflater.inflate(R.layout.filter_list_item, null);
         TextView dataTypeView = (TextView) vi.findViewById(R.id.filter_data_type);
-        checkBox = (CheckBox) vi.findViewById(R.id.filter_checkBox);
-        FilterItem filterItem = filterItems.get(position);
-        current_filterItem = filterItem;
+        CheckBox checkBox = (CheckBox) vi.findViewById(R.id.filter_checkBox);
+        FilterItem filterItem = mFilterItems.get(position);
+        final FilterItem current_filterItem = filterItem;
         checkBox.setOnClickListener(new View.OnClickListener() {
             FilterItem filterItem = current_filterItem;
+
             @Override
             public void onClick(View arg0) {
-                //final boolean isChecked = checkBox.isChecked();
+                //final boolean isChecked = mCheckBox.isChecked();
                 filterItem.is_checked = !filterItem.is_checked;
-                for(FilterItem filterItem : filterItems){
+                for (FilterItem filterItem : mFilterItems) {
                     Log.e(filterItem.datatype, filterItem.is_checked + "");
                 }
             }

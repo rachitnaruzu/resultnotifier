@@ -5,22 +5,24 @@ import java.util.ArrayList;
 
 public class RecentFragment extends MainFragment {
     public RecentFragment() {
-        super.type = "recent";
     }
+
     public void refreshFragmentFinal(){
         showLoading(true);
         inflateArrayList(0, RECENT_URL);
     }
     public void deleteSelectedItems(){
-        ArrayList<FileData> mItems = mListAdaptor.getAdapterItems();
+        final MyAdaptor listAdapter = getListAdaptor();
+        final DatabaseUtility dbUtil = getDatabaseUtility();
+        ArrayList<FileData> mItems = listAdapter.getAdapterItems();
         for(FileData fileData : mItems){
             if(fileData.isSelected){
                 dbUtil.deleteFile(fileData);
-                fileData.iscompleted = false;
+                fileData.mIsCompleted = false;
             }
         }
-        mListAdaptor.notifyDataSetChanged();
-        selectFlag = false;
+        listAdapter.notifyDataSetChanged();
+        setSelectedFlag(false);
     }
     public void onCreateViewFinal(){
         showLoading(true);

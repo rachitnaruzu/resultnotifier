@@ -3,58 +3,70 @@ package com.resultnotifier.main;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.ListView;
 
 import java.util.ArrayList;
 
 
 public class SavedFragment extends MainFragment {
+
     public SavedFragment() {
-        super.type = "saved";
     }
+
     public void refreshFragmentFinal(){
+        final DatabaseUtility dbUtil = getDatabaseUtility();
+        final MyAdaptor listAdaptor = getListAdaptor();
         ArrayList<FileData> fileDataItems =  dbUtil.getAllFiles(dbUtil.getFilerSavedCheck());
         for(FileData fileData : fileDataItems){
-            mListAdaptor.add_items(fileData);
-            fileData.iscompleted = true;
+            listAdaptor.add_items(fileData);
+            fileData.mIsCompleted = true;
         }
-        mListAdaptor.notifyDataSetChanged();
-        showNoContent(mListAdaptor.getCount() == 0);
+        listAdaptor.notifyDataSetChanged();
+        showNoContent(listAdaptor.getCount() == 0);
     }
+
     public void deleteSelectedItems(){
-        ArrayList<FileData> mItems = new ArrayList<>(mListAdaptor.getAdapterItems());
-        mListAdaptor.clear();// = new MyAdaptor(mainActivity);
+        final MyAdaptor listAdaptor = getListAdaptor();
+        final DatabaseUtility dbUtil = getDatabaseUtility();
+        ArrayList<FileData> mItems = new ArrayList<>(listAdaptor.getAdapterItems());
+        listAdaptor.clear();// = new MyAdaptor(mainActivity);
         for(FileData fileData : mItems){
             if(fileData.isSelected){
                 dbUtil.deleteFile(fileData);
             } else {
-                mListAdaptor.add_items(fileData);
+                listAdaptor.add_items(fileData);
             }
         }
-        //lv.setAdapter(mListAdaptor);
-        mListAdaptor.notifyDataSetChanged();
-        selectFlag = false;
-        showNoContent(mListAdaptor.getCount() == 0);
+        //lv.setAdapter(listAdaptor);
+        listAdaptor.notifyDataSetChanged();
+        setSelectedFlag(false);
+        showNoContent(listAdaptor.getCount() == 0);
     }
+
     public void onCreateViewFinal(){
+        final DatabaseUtility dbUtil = getDatabaseUtility();
+        final MyAdaptor listAdaptor = getListAdaptor();
+        final ListView listView = getListView();
+        final SwipeRefreshLayout swipeRefreshLayout = getSwipeRefreshLayout();
         ArrayList<FileData> fileDataItems = dbUtil.getAllFiles(dbUtil.getFilerSavedCheck());
             for(FileData fileData : fileDataItems){
-                mListAdaptor.add_items(fileData);
-                fileData.iscompleted = true;
+                listAdaptor.add_items(fileData);
+                fileData.mIsCompleted = true;
             }
-        mListAdaptor.notifyDataSetChanged();
-        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        listAdaptor.notifyDataSetChanged();
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                FileData mItem = (FileData) mListAdaptor.getItem(position);
+                FileData mItem = (FileData) listAdaptor.getItem(position);
                 openFile(mItem);
-                incrementViewsByOne(mItem.fileid);
+                incrementViewsByOne(mItem.mFileId);
             }
         });
-        showNoContent(mListAdaptor.getCount() == 0);
-        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+        showNoContent(listAdaptor.getCount() == 0);
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                mSwipeRefreshLayout.setRefreshing(false);
+                swipeRefreshLayout.setRefreshing(false);
             }
         });
     }

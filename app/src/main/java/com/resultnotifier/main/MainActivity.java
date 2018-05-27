@@ -1,6 +1,5 @@
 package com.resultnotifier.main;
 
-
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
@@ -23,8 +22,6 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -36,45 +33,150 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String TAG = "REN_MainActivity";
+    private static int[] mColors;
+    private static Snackbar mSnackbar;
+    private MainFragment mCurrent_Fragment;
     private DrawerLayout mDrawerLayout;
     private ListView mDrawerList;
     private ActionBarDrawerToggle mDrawerToggle;
-    private CharSequence mDrawerTitle;
-    private CharSequence mTitle;
-    private String[] navMenuTitles;
-    private TypedArray navMenuIcons;
-    private ArrayList<NavDrawerItem> navDrawerItems;
-    private NavDrawerListAdapter adapter;
+    private String[] mNavMenuTitles;
+    private TypedArray mNavMenuIcons;
+    private ArrayList<NavDrawerItem> mNavDrawerItems;
+    private NavDrawerListAdapter mAdapter;
     private Toolbar mToolbar;
-    private static int[] colors;
 
-
-    private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
-    private static final String TAG = "MainActivity";
-
-
-    MainFragment current_Fragment;
-
-    private static Snackbar mSnackbar;
-
-    public static void setmSnackbar(Snackbar mSnackbar){
-        MainActivity.mSnackbar = mSnackbar;
-    }
-
-    public static Snackbar getmSnackbar(){
+    public static Snackbar getmSnackbar() {
         return MainActivity.mSnackbar;
     }
 
-    public static int getRandomColor(){
-        return colors[(int)(Math.random() * colors.length)];
+    public static void setmSnackbar(Snackbar mSnackbar) {
+        MainActivity.mSnackbar = mSnackbar;
     }
 
-    private void requestDataTypes(){
+    public static int getRandomColor() {
+        return mColors[(int) (Math.random() * mColors.length)];
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.mmain);
+
+        requestDataTypes();
+
+        mToolbar = (Toolbar) findViewById(R.id.mtoolbar);
+        setSupportActionBar(mToolbar);
+        mNavMenuTitles = getResources().getStringArray(R.array.nav_drawer_items);
+        mNavMenuIcons = getResources().obtainTypedArray(R.array.nav_drawer_icons);
+        mColors = getResources().getIntArray(R.array.dataType_icon_bg_colors);
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerList = (ListView) findViewById(R.id.list_slidermenu);
+        mNavDrawerItems = new ArrayList<>();
+        for (int i = 0; i < mNavMenuTitles.length; i++) {
+            mNavDrawerItems.add(new NavDrawerItem(mNavMenuTitles[i], mNavMenuIcons.getResourceId(i, -1)));
+        }
+
+        mNavMenuIcons.recycle();
+        mDrawerList.setOnItemClickListener(new SlideMenuClickListener());
+        mAdapter = new NavDrawerListAdapter(getApplicationContext(), mNavDrawerItems);
+        mDrawerList.setAdapter(mAdapter);
+        mAdapter.notifyDataSetChanged();
+        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
+                mToolbar,
+                R.string.app_name,
+                R.string.app_name
+        );
+        //getSupportActionBar().setTitle(mNavMenuTitles[0]);
+        mDrawerLayout.setDrawerListener(mDrawerToggle);
+        if (savedInstanceState == null) {
+            displayView(0);
+        }
+        //getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setHomeButtonEnabled(true);
+        //displayView(0);
+    }
+
+    /**
+     * When using the ActionBarDrawerToggle, you must call it during
+     * onPostCreate() and onConfigurationChanged()...
+     */
+    @Override
+    public void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        // Sync the toggle state after onRestoreInstanceState has occurred.
+        mDrawerToggle.syncState();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // Pass any configuration change to the drawer toggls
+        mDrawerToggle.onConfigurationChanged(newConfig);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (mDrawerToggle.onOptionsItemSelected(item)) {
+            return true;
+        }
+        switch (item.getItemId()) {
+            case R.id.action_filter:
+                Intent intent = new Intent(this, FilterActivity.class);
+                startActivityForResult(intent, 0);
+                this.overridePendingTransition(R.anim.enter_from_right,
+                        R.anim.leave_to_left);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode == RESULT_OK) {
+            if (mCurrent_Fragment != null) {
+                Log.e("Main_Activity", "back to main activity");
+                mCurrent_Fragment.refreshFragment();
+            }
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+    }
+
+    @Override
+    public void onAttachFragment(Fragment fragment) {
+        super.onAttachFragment(fragment);
+
+
+    }
+
+    private void requestDataTypes() {
         Map<String, String> params = new HashMap<>();
         params = MainFragment.addSecureParams(params);
         CustomRequest fetchRequest = new CustomRequest(Request.Method.POST, MainFragment.FETCH_DATA_TYPES, params,
                 new Response.Listener<JSONObject>() {
                     DatabaseUtility dbUtil = DatabaseUtility.getInstance(getApplicationContext());
+
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
@@ -106,162 +208,46 @@ public class MainActivity extends AppCompatActivity {
         MyHTTPHandler.getInstance(getApplicationContext()).addToRequestQueue(fetchRequest);
     }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.mmain);
-
-        requestDataTypes();
-
-        mToolbar = (Toolbar) findViewById(R.id.mtoolbar);
-        setSupportActionBar(mToolbar);
-        navMenuTitles = getResources().getStringArray(R.array.nav_drawer_items);
-        navMenuIcons = getResources().obtainTypedArray(R.array.nav_drawer_icons);
-        colors = getResources().getIntArray(R.array.dataType_icon_bg_colors);
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        mDrawerList = (ListView) findViewById(R.id.list_slidermenu);
-        navDrawerItems = new ArrayList<>();
-        for(int i = 0; i < navMenuTitles.length; i++){
-            navDrawerItems.add(new NavDrawerItem(navMenuTitles[i], navMenuIcons.getResourceId(i, -1)));
-        }
-
-        navMenuIcons.recycle();
-        mDrawerList.setOnItemClickListener(new SlideMenuClickListener());
-        adapter = new NavDrawerListAdapter(getApplicationContext(), navDrawerItems);
-        mDrawerList.setAdapter(adapter);
-        adapter.notifyDataSetChanged();
-        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
-                mToolbar,
-                R.string.app_name,
-                R.string.app_name
-        );
-        //getSupportActionBar().setTitle(navMenuTitles[0]);
-        mDrawerLayout.setDrawerListener(mDrawerToggle);
-        if (savedInstanceState == null) {
-            displayView(0);
-        }
-        //getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setHomeButtonEnabled(true);
-        //displayView(0);
-    }
-
-    @Override
-    public void onAttachFragment(Fragment fragment) {
-        super.onAttachFragment(fragment);
-
-
-    }
-
-
-
-    /**
-     * Slide menu item click listener
-     * */
-    private class SlideMenuClickListener implements ListView.OnItemClickListener {
-        @Override
-        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            displayView(position);
-        }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (mDrawerToggle.onOptionsItemSelected(item)) {
-            return true;
-        }
-        switch (item.getItemId()) {
-            case R.id.action_filter:
-                Intent intent = new Intent(this, FilterActivity.class);
-                startActivityForResult(intent, 0);
-                this.overridePendingTransition(R.anim.enter_from_right,
-                        R.anim.leave_to_left);
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode == RESULT_OK) {
-            if(current_Fragment != null){
-                Log.e("Main_Activity","back to main activity");
-                current_Fragment.refreshFragment();
-            }
-        }
-    }
-
     /**
      * Diplaying fragment view for selected nav drawer list item
-     * */
+     */
     private void displayView(int position) {
         //Fragment fragment = null;
-        current_Fragment = null;
+        mCurrent_Fragment = null;
         switch (position) {
-            case 0: current_Fragment = new PublishedFragment(); break;
-            case 1: current_Fragment = new TopmostFragment(); break;
-            case 2: current_Fragment = new RecentFragment(); break;
-            case 3: current_Fragment = new SavedFragment(); break;
-            default: break;
+            case 0:
+                mCurrent_Fragment = new PublishedFragment();
+                break;
+            case 1:
+                mCurrent_Fragment = new TopmostFragment();
+                break;
+            case 2:
+                mCurrent_Fragment = new RecentFragment();
+                break;
+            case 3:
+                mCurrent_Fragment = new SavedFragment();
+                break;
+            default:
+                break;
         }
-        if (current_Fragment != null) {
+        if (mCurrent_Fragment != null) {
             FragmentManager fragmentManager = getSupportFragmentManager();
-            fragmentManager.beginTransaction().replace(R.id.frame_container, current_Fragment).commit();
+            fragmentManager.beginTransaction().replace(R.id.frame_container, mCurrent_Fragment).commit();
             mDrawerList.setItemChecked(position, true);
-            getSupportActionBar().setTitle(navMenuTitles[position]);
+            getSupportActionBar().setTitle(mNavMenuTitles[position]);
             mDrawerLayout.closeDrawer(mDrawerList);
         } else {
             Log.e("MainActivity", "Error in creating fragment");
         }
     }
 
-    @Override
-    public void setTitle(CharSequence title) {
-        mTitle = title;
-        //setTitle(mTitle);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        CommonUtility.TotalNotificationCount = 0;
-        CommonUtility.dataTypeMap.clear();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        //unregisterReceiver(mMessageReceiver);
-    }
-
-    @Override
-    protected void onDestroy() {
-        //unregisterReceiver(mMessageReceiver);
-        super.onDestroy();
-    }
-
     /**
-     * When using the ActionBarDrawerToggle, you must call it during
-     * onPostCreate() and onConfigurationChanged()...
+     * Slide menu item click listener
      */
-    @Override
-    protected void onPostCreate(Bundle savedInstanceState) {
-        super.onPostCreate(savedInstanceState);
-        // Sync the toggle state after onRestoreInstanceState has occurred.
-        mDrawerToggle.syncState();
+    private class SlideMenuClickListener implements ListView.OnItemClickListener {
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            displayView(position);
+        }
     }
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        // Pass any configuration change to the drawer toggls
-        mDrawerToggle.onConfigurationChanged(newConfig);
-    }
-
 }

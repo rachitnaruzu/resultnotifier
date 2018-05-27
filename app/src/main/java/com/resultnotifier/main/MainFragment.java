@@ -52,49 +52,65 @@ import java.util.TimeZone;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-
 public abstract class MainFragment extends Fragment {
-    ListView lv;
-    Activity mainActivity;
-    String type;
-    MyAdaptor mListAdaptor;
-    private boolean running_flag;
-    DatabaseUtility dbUtil;
-    String datatypes;
-    private String global_fileid;
-    private ActionMode mActionMode;
-    Snackbar mSnackbar;
-    //private ProgressBar loadingSpinner;
-    private ImageView no_network_icon;
-    private TextView no_network_text;
-    //private Button retry_button;
-    private TextView no_content;
-    private View fragmentView;
-    SwipeRefreshLayout mSwipeRefreshLayout;
-    private SimpleMultiChoiceModeListener multiChoiceModeListener = new SimpleMultiChoiceModeListener();
-
-
-    public MainFragment() {}
-
-    public final static String DOMAIN = CommonUtility.DOMAIN;
-    public final static String KEY = CommonUtility.SECRET_KEY;
-    public final static String PUBLISHED_URL = DOMAIN + "/published/";
-    public final static String TOPMOST_URL = DOMAIN + "/topmost/";
-    public final static String FETCH_VIEWS_URL = DOMAIN + "/updateselfviews/";
-    public final static String INCREMENT_VIEW_URL = DOMAIN + "/incrementviews/";
-    public final static String FETCH_DATA_TYPES = DOMAIN + "/datatypes/";
-    public final static String RECENT_URL = DOMAIN + "/recent/";
-    private int visibleCount;
-    private String currentURL;
-    private ArrayList<FileData> all_fileDataItems;
-    boolean selectFlag;
-    private boolean thatsit;
-
-
+    public static final String DOMAIN = CommonUtility.DOMAIN;
+    public static final String KEY = CommonUtility.SECRET_KEY;
+    public static final String PUBLISHED_URL = DOMAIN + "/published/";
+    public static final String TOPMOST_URL = DOMAIN + "/topmost/";
+    public static final String FETCH_VIEWS_URL = DOMAIN + "/updateselfviews/";
+    public static final String INCREMENT_VIEW_URL = DOMAIN + "/incrementviews/";
+    public static final String FETCH_DATA_TYPES = DOMAIN + "/datatypes/";
+    public static final String RECENT_URL = DOMAIN + "/recent/";
     final protected static char[] hexArray = "0123456789abcdef".toCharArray();
+    private static final String TAG = "REN_MainFragment";
+    private boolean mSelectFlag;
+    private ListView mListView;
+    private Activity mMainActivity;
+    private MyAdaptor mListAdaptor;
+    private DatabaseUtility mDbUtil;
+    private String mDataType;
+    private String mGlobalFileId;
+    private Snackbar mSnackBar;
+    private ImageView mNoNetworkIcon;
+    private TextView mNoNetworkText;
+    private boolean mRunningFlag;
+    private TextView mNoContent;
+    private View mFragmentView;
+    private SwipeRefreshLayout mSwipeRefreshLayout;
+    private SimpleMultiChoiceModeListener mMultiChoiceModeListener =
+            new SimpleMultiChoiceModeListener();
+    private int mVisibleCount;
+    private String mCurrentURL;
+    private ArrayList<FileData> mAllFileDataItems;
+    private boolean mThatsIt;
+
+
+    public MainFragment() {
+    }
+
+    public MyAdaptor getListAdaptor() {
+        return mListAdaptor;
+    }
+
+    public DatabaseUtility getDatabaseUtility() {
+        return mDbUtil;
+    }
+
+    public ListView getListView() {
+        return mListView;
+    }
+
+    public SwipeRefreshLayout getSwipeRefreshLayout() {
+        return mSwipeRefreshLayout;
+    }
+
+    public void setSelectedFlag(boolean isSelected) {
+        mSelectFlag = isSelected;
+    }
+
     public static String bytesToHex(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
-        for ( int j = 0; j < bytes.length; j++ ) {
+        for (int j = 0; j < bytes.length; j++) {
             int v = bytes[j] & 0xFF;
             hexChars[j * 2] = hexArray[v >>> 4];
             hexChars[j * 2 + 1] = hexArray[v & 0x0F];
@@ -116,7 +132,7 @@ public abstract class MainFragment extends Fragment {
         return null;
     }
 
-    public static String getEncodedTimestamp(){
+    public static String getEncodedTimestamp() {
         Calendar currentTime = Calendar.getInstance();
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -124,7 +140,7 @@ public abstract class MainFragment extends Fragment {
         return Base64.encodeToString(ts.getBytes(), Base64.URL_SAFE);
     }
 
-    public static Map<String, String> addSecureParams(Map<String, String> params){
+    public static Map<String, String> addSecureParams(Map<String, String> params) {
         String ts = getEncodedTimestamp();
         params.put("sec", ts);
         params.put("sig", encodeStringData(KEY, ts));
@@ -134,7 +150,7 @@ public abstract class MainFragment extends Fragment {
     void inflateArrayList(int offset, String url) {
         Map<String, String> params = new HashMap<>();
         params.put("offset", "" + offset);
-        params.put("datatypes", datatypes);
+        params.put("datatypes", mDataType);
         params = addSecureParams(params);
         CustomRequest fetchRequest = new CustomRequest(Request.Method.POST, url, params,
                 new Response.Listener<JSONObject>() {
@@ -142,28 +158,28 @@ public abstract class MainFragment extends Fragment {
                     public void onResponse(JSONObject response) {
                         try {
                             JSONArray jArray = response.getJSONArray("files");
-                            thatsit = jArray.length() < visibleCount;
+                            mThatsIt = jArray.length() < mVisibleCount;
                             for (int i = 0; i < jArray.length(); i++) {
                                 JSONObject oneObject = jArray.getJSONObject(i);
                                 FileData filedata = new FileData();
-                                filedata.datecreated = oneObject.getString("datecreated");
-                                filedata.displayname = oneObject.getString("displayname");
-                                filedata.url = oneObject.getString("url");
-                                filedata.datatype = oneObject.getString("datatype");
-                                filedata.views = oneObject.getString("views");
-                                filedata.filetype = oneObject.getString("filetype");
-                                filedata.fileid = oneObject.getString("fileid");
-                                filedata.iscompleted = dbUtil.isFilePresent(filedata.fileid);
-                                if(filedata.iscompleted){
-                                    dbUtil.updateViews(filedata);
+                                filedata.mDateCreated = oneObject.getString("datecreated");
+                                filedata.mDisplayName = oneObject.getString("displayname");
+                                filedata.mUrl = oneObject.getString("url");
+                                filedata.mDataType = oneObject.getString("datatype");
+                                filedata.mViews = oneObject.getString("views");
+                                filedata.mFileType = oneObject.getString("filetype");
+                                filedata.mFileId = oneObject.getString("fileid");
+                                filedata.mIsCompleted = mDbUtil.isFilePresent(filedata.mFileId);
+                                if (filedata.mIsCompleted) {
+                                    mDbUtil.updateViews(filedata);
                                 }
                                 mListAdaptor.add_items(filedata);
                             }
-                            running_flag = false;
+                            mRunningFlag = false;
                             showLoading(false);
                             mListAdaptor.notifyDataSetChanged();
                             showNoContent(mListAdaptor.getCount() == 0);
-                            Log.i(type + "-data: ", response.toString());
+                            Log.i(TAG, response.toString());
                             mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
                                 @Override
                                 public void onRefresh() {
@@ -172,21 +188,21 @@ public abstract class MainFragment extends Fragment {
                                 }
                             });
                         } catch (Exception e) {
-                            VolleyLog.v(type + "-data: ", response.toString());
-                            Log.e(type + "-data: ", e.toString());
+                            VolleyLog.v(TAG, response.toString());
+                            Log.e(TAG, e.toString());
                             e.printStackTrace();
-                            Log.e(type + "-data: ", response.toString());
+                            Log.e(TAG, response.toString());
                         }
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                VolleyLog.e("InflateArray Error: ", error.getMessage());
+                VolleyLog.e(TAG, error.getMessage());
                 //displayNoConnectionFragment();
                 mListAdaptor.clear();
                 mListAdaptor.notifyDataSetChanged();
-                mSnackbar.setText("No Network");
-                mSnackbar.show();
+                mSnackBar.setText("No Network");
+                mSnackBar.show();
                 showLoading(false);
                 showNoNetwork(true);
                 mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
@@ -198,7 +214,7 @@ public abstract class MainFragment extends Fragment {
                 });
             }
         });
-        MyHTTPHandler.getInstance(mainActivity.getApplicationContext()).addToRequestQueue(fetchRequest);
+        MyHTTPHandler.getInstance(mMainActivity.getApplicationContext()).addToRequestQueue(fetchRequest);
     }
 
     private String getJSONSelfViews(ArrayList<FileData> fileDataItems) {
@@ -208,7 +224,7 @@ public abstract class MainFragment extends Fragment {
             //mListAdaptor.add_items(fileData);
             if (!fileData.selfViews.equals("0")) {
                 is_any_one_self_view = true;
-                selfViewsB.append("{\"fileid\":\"" + fileData.fileid + "\",\"selfviews\":\"" + fileData.selfViews + "\"}" + ",");
+                selfViewsB.append("{\"mFileId\":\"" + fileData.mFileId + "\",\"selfviews\":\"" + fileData.selfViews + "\"}" + ",");
             }
         }
         selfViewsB.replace(selfViewsB.length() - 1, selfViewsB.length(), "]");
@@ -220,11 +236,11 @@ public abstract class MainFragment extends Fragment {
 
     private void updateSelfViews(ArrayList<FileData> fileDataItems) {
         String selfViews = getJSONSelfViews(fileDataItems);
-        all_fileDataItems = fileDataItems;
+        mAllFileDataItems = fileDataItems;
         Map<String, String> params = new HashMap<>();
         params.put("selfviews", selfViews);
         params = addSecureParams(params);
-        if(!selfViews.equals("{}")) {
+        if (!selfViews.equals("{}")) {
             CustomRequest updateSelfViewsRequest = new CustomRequest(Request.Method.POST, FETCH_VIEWS_URL, params,
                     new Response.Listener<JSONObject>() {
                         @Override
@@ -245,7 +261,7 @@ public abstract class MainFragment extends Fragment {
 
                 }
             });
-            MyHTTPHandler.getInstance(mainActivity.getApplicationContext()).addToRequestQueue(updateSelfViewsRequest);
+            MyHTTPHandler.getInstance(mMainActivity.getApplicationContext()).addToRequestQueue(updateSelfViewsRequest);
         }
     }
 
@@ -254,19 +270,53 @@ public abstract class MainFragment extends Fragment {
         Date date = new Date();
         SimpleDateFormat sdf;
         super.onCreate(savedInstanceState);
-        mainActivity = getActivity();
-        dbUtil = DatabaseUtility.getInstance(mainActivity.getApplicationContext());
-        datatypes = dbUtil.getCheckedDataTypes();
-        selectFlag = false;
-        thatsit = false;
+        mMainActivity = getActivity();
+        mDbUtil = DatabaseUtility.getInstance(mMainActivity.getApplicationContext());
+        mDataType = mDbUtil.getCheckedDataTypes();
+        mSelectFlag = false;
+        mThatsIt = false;
         Log.i("Oncreate", "Oncreate");
     }
 
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        Log.i("Oncreateview", "Oncreateview");
+        View vi = inflater.inflate(R.layout.result, container, false);
+        mFragmentView = vi;
+        mSnackBar = Snackbar.make(vi.findViewById(R.id.myCoordinatorLayout), R.string.no_network_message, Snackbar.LENGTH_LONG);
 
-    public void refreshFragment(){
-        datatypes = dbUtil.getCheckedDataTypes();
-        selectFlag = false;
-        thatsit = false;
+
+        mListView = (ListView) vi.findViewById(R.id.listview);
+        mListAdaptor = new MyAdaptor(mMainActivity);
+        mListView.setAdapter(mListAdaptor);
+
+        mNoContent = (TextView) vi.findViewById(R.id.no_content);
+        mNoNetworkIcon = (ImageView) vi.findViewById(R.id.no_network_icon);
+        mNoNetworkText = (TextView) vi.findViewById(R.id.no_network_text);
+
+        mSwipeRefreshLayout = (SwipeRefreshLayout) vi.findViewById(R.id.swiperefresh);
+        showLoading(false);
+        showNoNetwork(false);
+        showNoContent(false);
+        setMultiChoice(mListView);
+        MainActivity.setmSnackbar(mSnackBar);
+
+        updateSelfViews(mDbUtil.getAllFiles(false));
+        onCreateViewFinal();
+
+        return vi;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mMultiChoiceModeListener.exitActionMode();
+    }
+
+    public void refreshFragment() {
+        mDataType = mDbUtil.getCheckedDataTypes();
+        mSelectFlag = false;
+        mThatsIt = false;
         mListAdaptor.clear();
         mListAdaptor.notifyDataSetChanged();
         refreshFragmentFinal();
@@ -274,102 +324,87 @@ public abstract class MainFragment extends Fragment {
 
     public abstract void refreshFragmentFinal();
 
-
     public abstract void deleteSelectedItems();
 
-
-    private void cancelSelect(){
+    private void cancelSelect() {
         ArrayList<FileData> mItems = mListAdaptor.getAdapterItems();
-        for(FileData fileData : mItems){
-            if(fileData.isSelected) {
+        for (FileData fileData : mItems) {
+            if (fileData.isSelected) {
                 fileData.isSelected = false;
                 //fileData.displaySelected = false;
             }
         }
-        multiChoiceModeListener.exitActionMode();
+        mMultiChoiceModeListener.exitActionMode();
         mListAdaptor.notifyDataSetChanged();
         Handler handler = new Handler();
-        handler.postDelayed(new Runnable(){
+        handler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 // Do something after 500ms
                 ArrayList<FileData> mItems = mListAdaptor.getAdapterItems();
-                for(FileData fileData : mItems){
+                for (FileData fileData : mItems) {
                     fileData.displaySelected = false;
                 }
             }
         }, 500);
-        selectFlag = false;
+        mSelectFlag = false;
     }
 
-
-
-    public void incrementViewsByOne(String fileid){
-        global_fileid = fileid;
+    public void incrementViewsByOne(String fileid) {
+        mGlobalFileId = fileid;
         Map<String, String> params = new HashMap<>();
-        params.put("fileid", fileid);
+        params.put("mFileId", fileid);
         params = addSecureParams(params);
         CustomRequest updateSelfViewsRequest = new CustomRequest(Request.Method.POST, INCREMENT_VIEW_URL, params,
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
-                        //DatabaseUtility.getInstance(mainActivity.getApplicationContext()).incrementViewsByOne(global_fileid);
+                        //DatabaseUtility.getInstance(mMainActivity.getApplicationContext()).incrementViewsByOne(mGlobalFileId);
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                DatabaseUtility.getInstance(mainActivity.getApplicationContext()).incrementSelfViewsByOne(global_fileid);
+                DatabaseUtility.getInstance(mMainActivity.getApplicationContext()).incrementSelfViewsByOne(mGlobalFileId);
                 VolleyLog.e("Increment Error: ", error.getMessage());
             }
         });
-        MyHTTPHandler.getInstance(mainActivity.getApplicationContext()).addToRequestQueue(updateSelfViewsRequest);
+        MyHTTPHandler.getInstance(mMainActivity.getApplicationContext()).addToRequestQueue(updateSelfViewsRequest);
     }
 
-    public class SnackBarFileDownloadClickListener implements View.OnClickListener {
-        FileData filedata;
-        public SnackBarFileDownloadClickListener(FileData filedata){
-            this.filedata = filedata;
-        }
-        @Override
-        public void onClick(View v) {
-            filedata.downloadjob = new DownloadJob(mainActivity, filedata, mListAdaptor);
-        }
-    }
-
-    public void openFile(FileData fileData){
+    public void openFile(FileData fileData) {
         File root = android.os.Environment.getExternalStorageDirectory();
-        File dir = new File (root.getAbsolutePath() + "/xmls");
-        if(!dir.exists()) {
+        File dir = new File(root.getAbsolutePath() + "/xmls");
+        if (!dir.exists()) {
             dir.mkdirs();
         }
-        File file = new File(dir, fileData.fileid + "." + fileData.filetype);
-        if(!file.exists()){
+        File file = new File(dir, fileData.mFileId + "." + fileData.mFileType);
+        if (!file.exists()) {
 
             Snackbar snackbar = Snackbar
-                    .make(fragmentView.findViewById(R.id.myCoordinatorLayout),
-                            "File does not exists",Snackbar.LENGTH_INDEFINITE)
+                    .make(mFragmentView.findViewById(R.id.myCoordinatorLayout),
+                            "File does not exists", Snackbar.LENGTH_INDEFINITE)
                     .setAction("REDOWNLOAD", new SnackBarFileDownloadClickListener(fileData));
 
             snackbar.show();
             return;
         }
         MimeTypeMap myMime = MimeTypeMap.getSingleton();
-        String mimeType = myMime.getMimeTypeFromExtension(fileData.filetype);
+        String mimeType = myMime.getMimeTypeFromExtension(fileData.mFileType);
 
         Uri apkURI = FileProvider.getUriForFile(
-                mainActivity, mainActivity.getPackageName() + ".provider", file);
+                mMainActivity, mMainActivity.getPackageName() + ".provider", file);
 
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setDataAndType(apkURI, mimeType);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-        grantAllUriPermissions(mainActivity, intent, apkURI);
-        try{
+        grantAllUriPermissions(mMainActivity, intent, apkURI);
+        try {
             startActivity(intent);
-        } catch (android.content.ActivityNotFoundException ex){
-            mSnackbar.setText("No app found to open the file");
-            mSnackbar.show();
+        } catch (android.content.ActivityNotFoundException ex) {
+            mSnackBar.setText("No app found to open the file");
+            mSnackBar.show();
         }
     }
 
@@ -378,6 +413,101 @@ public abstract class MainFragment extends Fragment {
         for (ResolveInfo resolveInfo : resInfoList) {
             String packageName = resolveInfo.activityInfo.packageName;
             context.grantUriPermission(packageName, uri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        }
+    }
+
+    public void setMultiChoice(ListView lv) {
+        lv.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
+        lv.setMultiChoiceModeListener(mMultiChoiceModeListener);
+    }
+
+    public abstract void onCreateViewFinal();
+
+    public void handleNonSaved(String url) {
+        this.mCurrentURL = url;
+        inflateArrayList(0, mCurrentURL);
+
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                FileData mItem = (FileData) mListAdaptor.getItem(position);
+                if (mItem.mIsCompleted) {
+                    openFile(mItem);
+                    incrementViewsByOne(mItem.mFileId);
+                } else {
+                    if (mItem.downloadjob == null || !mItem.getInProcess()) {
+                        mItem.downloadjob = new DownloadJob(mMainActivity, mItem, mListAdaptor);
+                        //mListAdaptor.notifyDataSetChanged();
+                    }
+                }
+            }
+        });
+
+        mListView.setOnScrollListener(new AbsListView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+
+            }
+
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+                if (!mThatsIt && firstVisibleItem + visibleItemCount == totalItemCount && totalItemCount != 0) {
+                    mVisibleCount = visibleItemCount;
+                    if (!mRunningFlag) {
+                        mRunningFlag = true;
+                        inflateArrayList(totalItemCount, mCurrentURL);
+                    }
+                }
+            }
+        });
+    }
+
+    public void showLoading(boolean show) {
+        if (show) {
+            mSwipeRefreshLayout.post(new Runnable() {
+                @Override
+                public void run() {
+                    mSwipeRefreshLayout.setRefreshing(true);
+                }
+            });
+        } else {
+            mSwipeRefreshLayout.post(new Runnable() {
+                @Override
+                public void run() {
+                    mSwipeRefreshLayout.setRefreshing(false);
+                }
+            });
+        }
+    }
+
+    public void showNoNetwork(boolean show) {
+        if (show) {
+            mNoNetworkIcon.setVisibility(View.VISIBLE);
+            mNoNetworkText.setVisibility(View.VISIBLE);
+        } else {
+            mNoNetworkIcon.setVisibility(View.INVISIBLE);
+            mNoNetworkText.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    public void showNoContent(boolean show) {
+        if (show) {
+            mNoContent.setVisibility(View.VISIBLE);
+        } else {
+            mNoContent.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    public class SnackBarFileDownloadClickListener implements View.OnClickListener {
+        FileData filedata;
+
+        public SnackBarFileDownloadClickListener(FileData filedata) {
+            this.filedata = filedata;
+        }
+
+        @Override
+        public void onClick(View v) {
+            filedata.downloadjob = new DownloadJob(mMainActivity, filedata, mListAdaptor);
         }
     }
 
@@ -390,8 +520,8 @@ public abstract class MainFragment extends Fragment {
         int completed_count;
         int incompleted_count;
 
-        public void exitActionMode(){
-            if(global_mode != null){
+        public void exitActionMode() {
+            if (global_mode != null) {
                 global_mode.finish();
             }
             completed_count = incompleted_count = 0;
@@ -400,46 +530,28 @@ public abstract class MainFragment extends Fragment {
         @Override
         public void onItemCheckedStateChanged(ActionMode mode, int position,
                                               long id, boolean checked) {
-            // Here you can do something when items are selected/de-selected,
-            // such as update the title in the CAB
-            //View view = mode.getCustomView();
             FileData fileData = (FileData) mListAdaptor.getItem(position);
-            if (fileData.iscompleted) {
+            if (fileData.mIsCompleted) {
                 completed_count += checked ? 1 : -1;
             } else {
                 incompleted_count += checked ? 1 : -1;
             }
             fileData.isSelected = checked;
             mListAdaptor.notifyDataSetChanged();
-            //total_count += checked ? 1 : -1;
             feed_update_count.setText(String.valueOf(completed_count + incompleted_count));
-            if(incompleted_count > 0){
+            if (incompleted_count > 0) {
                 menuItemDelete.setVisibility(View.INVISIBLE);
             } else {
                 menuItemDelete.setVisibility(View.VISIBLE);
             }
         }
 
-        @Override
-        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-            // Respond to clicks on the actions in the CAB
-            switch (item.getItemId()) {
-                case R.id.delete:
-                    deleteSelectedItems();
-                    global_mode = mode;
-                    exitActionMode();
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
-        private String getPresentsbleSelectedString(){
+        private String getPresentsbleSelectedString() {
             ArrayList<FileData> mItems = mListAdaptor.getAdapterItems();
             String msg = "";
-            for(FileData fileData : mItems){
-                if(fileData.isSelected) {
-                    msg += fileData.displayname + "\n" + fileData.url + "\n\n";
+            for (FileData fileData : mItems) {
+                if (fileData.isSelected) {
+                    msg += fileData.mDisplayName + "\n" + fileData.mUrl + "\n\n";
                 }
             }
             return msg;
@@ -452,8 +564,8 @@ public abstract class MainFragment extends Fragment {
             MenuInflater inflater = mode.getMenuInflater();
             inflater.inflate(R.menu.context_menu, menu);
 
-            LayoutInflater layoutInflater = (LayoutInflater) mainActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            Animation translation = AnimationUtils.loadAnimation(mainActivity, R.anim.enter_from_right);
+            LayoutInflater layoutInflater = (LayoutInflater) mMainActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            Animation translation = AnimationUtils.loadAnimation(mMainActivity, R.anim.enter_from_right);
             this.global_mode = mode;
 
             menuItemDelete = (ImageView) layoutInflater.inflate(R.layout.action_bar_item, null);
@@ -503,143 +615,33 @@ public abstract class MainFragment extends Fragment {
         }
 
         @Override
+        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+            // Here you can perform updates to the CAB due to
+            // an invalidate() request
+            return false;
+        }
+
+        @Override
+        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+            // Respond to clicks on the actions in the CAB
+            switch (item.getItemId()) {
+                case R.id.delete:
+                    deleteSelectedItems();
+                    global_mode = mode;
+                    exitActionMode();
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        @Override
         public void onDestroyActionMode(ActionMode mode) {
             // Here you can make any necessary updates to the activity when
             // the CAB is removed. By default, selected items are deselected/unchecked.
             cancelSelect();
             exitActionMode();
         }
-
-        @Override
-        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-            // Here you can perform updates to the CAB due to
-            // an invalidate() request
-            return false;
-        }
-    }
-
-    public void setMultiChoice(ListView lv){
-        lv.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
-        lv.setMultiChoiceModeListener(multiChoiceModeListener);
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        multiChoiceModeListener.exitActionMode();
-    }
-
-    public abstract void onCreateViewFinal();
-
-    public void handleNonSaved(String url){
-        this.currentURL = url;
-        inflateArrayList(0, currentURL);
-
-        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                FileData mItem = (FileData) mListAdaptor.getItem(position);
-                if (mItem.iscompleted) {
-                    openFile(mItem);
-                    incrementViewsByOne(mItem.fileid);
-                } else {
-                    if (mItem.downloadjob == null || !mItem.getInProcess()) {
-                        mItem.downloadjob = new DownloadJob(mainActivity, mItem, mListAdaptor);
-                        //mListAdaptor.notifyDataSetChanged();
-                    }
-                }
-            }
-        });
-
-        lv.setOnScrollListener(new AbsListView.OnScrollListener() {
-            @Override
-            public void onScrollStateChanged(AbsListView view, int scrollState) {
-
-            }
-
-            @Override
-            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-                if (!thatsit && firstVisibleItem + visibleItemCount == totalItemCount && totalItemCount != 0) {
-                    visibleCount = visibleItemCount;
-                    if (!running_flag) {
-                        running_flag = true;
-                        inflateArrayList(totalItemCount, currentURL);
-                    }
-                }
-            }
-        });
-    }
-
-    public void showLoading(boolean show){
-        if (show) {
-            //lv.setVisibility(View.INVISIBLE);
-            //loadingSpinner.setVisibility(View.VISIBLE);
-            mSwipeRefreshLayout.post(new Runnable() {
-                @Override
-                public void run() {
-                    mSwipeRefreshLayout.setRefreshing(true);
-                }
-            });
-        } else {
-           // loadingSpinner.setVisibility(View.INVISIBLE);
-            //lv.setVisibility(View.VISIBLE);
-            mSwipeRefreshLayout.post(new Runnable() {
-                @Override
-                public void run() {
-                    mSwipeRefreshLayout.setRefreshing(false);
-                }
-            });
-        }
-    }
-
-    public void showNoNetwork(boolean show){
-        if(show){
-            no_network_icon.setVisibility(View.VISIBLE);
-            no_network_text.setVisibility(View.VISIBLE);
-            //retry_button.setVisibility(View.VISIBLE);
-        } else {
-            no_network_icon.setVisibility(View.INVISIBLE);
-            no_network_text.setVisibility(View.INVISIBLE);
-            //retry_button.setVisibility(View.INVISIBLE);
-        }
-    }
-
-    public void showNoContent(boolean show){
-        if(show){
-            no_content.setVisibility(View.VISIBLE);
-        } else {
-            no_content.setVisibility(View.INVISIBLE);
-        }
-    }
-
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        Log.i("Oncreateview", "Oncreateview");
-        View vi = inflater.inflate(R.layout.result, container, false);
-        fragmentView = vi;
-        mSnackbar = Snackbar.make(vi.findViewById(R.id.myCoordinatorLayout), R.string.no_network_message, Snackbar.LENGTH_LONG);
-
-
-        lv = (ListView) vi.findViewById(R.id.listview);
-        mListAdaptor = new MyAdaptor(mainActivity);
-        lv.setAdapter(mListAdaptor);
-
-        no_content = (TextView) vi.findViewById(R.id.no_content);
-        no_network_icon = (ImageView) vi.findViewById(R.id.no_network_icon);
-        no_network_text = (TextView) vi.findViewById(R.id.no_network_text);
-
-        mSwipeRefreshLayout = (SwipeRefreshLayout) vi.findViewById(R.id.swiperefresh);
-        showLoading(false);
-        showNoNetwork(false);
-        showNoContent(false);
-        setMultiChoice(lv);
-        MainActivity.setmSnackbar(mSnackbar);
-
-        updateSelfViews(dbUtil.getAllFiles(false));
-        onCreateViewFinal();
-
-        return vi;
     }
 
 }

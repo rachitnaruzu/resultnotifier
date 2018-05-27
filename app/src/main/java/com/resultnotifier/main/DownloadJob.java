@@ -3,7 +3,6 @@ package com.resultnotifier.main;
 import android.app.Activity;
 import android.os.AsyncTask;
 import android.util.Log;
-import android.widget.ImageView;
 
 import com.android.volley.Request;
 import com.android.volley.Response;
@@ -24,65 +23,29 @@ import java.util.Map;
 
 public class DownloadJob {
 
-    private FileData file;
-    private File finalFile, tempFile;
-    private Activity mainActivity;
-    private ImageView tick;
-    private AsyncTask<String, Integer, Long> downloadFileTask;
-    private boolean isAlive;
-    private String global_fileid;
-    private MyAdaptor mListAdapter;
-    private Exception ex;
-
-    public boolean is_Alive() {
-        return isAlive;
-    }
-
-    public void incrementViewsByOne(String fileid){
-        global_fileid = fileid;
-        Map<String, String> params = new HashMap<>();
-        params.put("fileid", fileid);
-        params = MainFragment.addSecureParams(params);
-        CustomRequest updateSelfViewsRequest = new CustomRequest(Request.Method.POST, MainFragment.INCREMENT_VIEW_URL, params,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        //DatabaseUtility.getInstance(mainActivity.getApplicationContext()).incrementViewsByOne(global_fileid);
-                    }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                DatabaseUtility.getInstance(mainActivity.getApplicationContext()).incrementSelfViewsByOne(global_fileid);
-                VolleyLog.e("Error: ", error.getMessage());
-            }
-        });
-        MyHTTPHandler.getInstance(mainActivity.getApplicationContext()).addToRequestQueue(updateSelfViewsRequest);
-    }
+    private final FileData mFile;
+    private final Activity mMainActivity;
+    private final AsyncTask<String, Integer, Long> mDownloadFileTask;
+    private File mFinalFile;
+    private File mTempFile;
+    private String mGlobalFileId;
+    private Exception mException;
 
     public DownloadJob(final Activity mainActivityy, final FileData filedata, final MyAdaptor mListAdapter) {
-        this.file = filedata;
-        this.mListAdapter = mListAdapter;
-        this.tempFile = filedata.tempFile;
-        this.mainActivity = mainActivityy;
-        this.ex = null;
+        this.mFile = filedata;
+        this.mTempFile = filedata.tempFile;
+        this.mMainActivity = mainActivityy;
+        this.mException = null;
 
         File root = android.os.Environment.getExternalStorageDirectory();
-        File dir = new File (root.getAbsolutePath() + "/xmls");
-        if(!dir.exists()) {
+        File dir = new File(root.getAbsolutePath() + "/xmls");
+        if (!dir.exists()) {
             dir.mkdirs();
         }
-        this.tempFile = new File(dir, file.fileid + ".temp");
-        this.finalFile = new File(dir, file.fileid + "." + file.filetype);
+        this.mTempFile = new File(dir, mFile.mFileId + ".temp");
+        this.mFinalFile = new File(dir, mFile.mFileId + "." + mFile.mFileType);
 
-        downloadFileTask = new AsyncTask<String, Integer, Long>() {
-
-            @Override
-            protected void onPreExecute() {
-                super.onPreExecute();
-                file.setProgress(0);
-                file.setInProcess(true);
-                isAlive = true;
-            }
+        mDownloadFileTask = new AsyncTask<String, Integer, Long>() {
 
             protected Long doInBackground(String... downloadlinks) {
                 try {
@@ -92,7 +55,7 @@ public class DownloadJob {
                     int progressStatus;
                     int lengthoffile = connection.getContentLength();
                     InputStream input = new BufferedInputStream(url.openStream(), 8192);
-                    OutputStream output = new FileOutputStream(tempFile);
+                    OutputStream output = new FileOutputStream(mTempFile);
                     byte data[] = new byte[1024];
                     long total = 0;
                     int count;
@@ -108,39 +71,66 @@ public class DownloadJob {
                 } catch (Exception e) {
                     Log.e("DownloadJob: ", e.getMessage());
                     e.printStackTrace();
-                    ex = e;
+                    mException = e;
                 }
                 return null;
             }
 
-            protected void onProgressUpdate(Integer... progress) {
-                file.setProgress(progress[0]);
+            @Override
+            protected void onPreExecute() {
+                super.onPreExecute();
+                mFile.setProgress(0);
+                mFile.setInProcess(true);
             }
 
             protected void onPostExecute(Long result) {
-                if(ex != null) {
+                if (mException != null) {
                     MainActivity.getmSnackbar().setText("File Download Error");
                     MainActivity.getmSnackbar().show();
-                    file.setProgress(0);
-                    file.setInProcess(false);
+                    mFile.setProgress(0);
+                    mFile.setInProcess(false);
                     mListAdapter.notifyDataSetChanged();
                     return;
                 }
-                file.setProgress(100);
+                mFile.setProgress(100);
 
-                tempFile.renameTo(finalFile);
-                finalFile = tempFile;
-                file.iscompleted = true;
-                file.setInProcess(false);
-                isAlive = false;
+                mTempFile.renameTo(mFinalFile);
+                mFinalFile = mTempFile;
+                mFile.mIsCompleted = true;
+                mFile.setInProcess(false);
                 DatabaseUtility dbUtil = DatabaseUtility.getInstance(mainActivityy.getApplicationContext());
-                if(!dbUtil.isFilePresent(filedata.fileid)) {
-                    dbUtil.addFileData(file);
+                if (!dbUtil.isFilePresent(filedata.mFileId)) {
+                    dbUtil.addFileData(mFile);
                 }
-                incrementViewsByOne(file.fileid);
+                incrementViewsByOne(mFile.mFileId);
                 mListAdapter.notifyDataSetChanged();
             }
+
+            protected void onProgressUpdate(Integer... progress) {
+                mFile.setProgress(progress[0]);
+            }
         };
-        downloadFileTask.execute(filedata.url);
+        mDownloadFileTask.execute(filedata.mUrl);
+    }
+
+    public void incrementViewsByOne(String fileid) {
+        mGlobalFileId = fileid;
+        Map<String, String> params = new HashMap<>();
+        params.put("mFileId", fileid);
+        params = MainFragment.addSecureParams(params);
+        CustomRequest updateSelfViewsRequest = new CustomRequest(Request.Method.POST, MainFragment.INCREMENT_VIEW_URL, params,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        //DatabaseUtility.getInstance(mMainActivity.getApplicationContext()).incrementViewsByOne(mGlobalFileId);
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                DatabaseUtility.getInstance(mMainActivity.getApplicationContext()).incrementSelfViewsByOne(mGlobalFileId);
+                VolleyLog.e("Error: ", error.getMessage());
+            }
+        });
+        MyHTTPHandler.getInstance(mMainActivity.getApplicationContext()).addToRequestQueue(updateSelfViewsRequest);
     }
 }

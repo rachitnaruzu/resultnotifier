@@ -1,8 +1,8 @@
 package com.resultnotifier.main;
 
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
@@ -13,9 +13,9 @@ import android.widget.ListView;
 
 public class FilterActivity extends AppCompatActivity {
 
-    ListView filterList;
-    FilterAdapter filterAdapter;
-    CheckBox filterSavedCheckbox;
+    private ListView mFilterList;
+    private FilterAdapter mFilterAdapter;
+    private CheckBox mFilterSavedCheckbox;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,12 +25,12 @@ public class FilterActivity extends AppCompatActivity {
         setSupportActionBar(filter_toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        filterSavedCheckbox = (CheckBox) findViewById(R.id.filter_saved_checkBox);
-        filterSavedCheckbox.setChecked(DatabaseUtility.getInstance(getApplicationContext()).getFilerSavedCheck());
+        mFilterSavedCheckbox = (CheckBox) findViewById(R.id.filter_saved_checkBox);
+        mFilterSavedCheckbox.setChecked(DatabaseUtility.getInstance(getApplicationContext()).getFilerSavedCheck());
 
-        filterList = (ListView) findViewById(R.id.filter_list);
-        filterAdapter = new FilterAdapter(this);
-        filterList.setAdapter(filterAdapter);
+        mFilterList = (ListView) findViewById(R.id.filter_list);
+        mFilterAdapter = new FilterAdapter(this);
+        mFilterList.setAdapter(mFilterAdapter);
     }
 
     @Override
@@ -49,8 +49,8 @@ public class FilterActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.filter_action_save) {
-            filterAdapter.updateDatabase();
-            DatabaseUtility.getInstance(getApplicationContext()).updateFilterSaved(filterSavedCheckbox.isChecked());
+            mFilterAdapter.updateDatabase();
+            DatabaseUtility.getInstance(getApplicationContext()).updateFilterSaved(mFilterSavedCheckbox.isChecked());
             Log.e("Save Pressed", "Save Pressed");
             Intent intent = new Intent();
             setResult(RESULT_OK, intent);
@@ -59,7 +59,7 @@ public class FilterActivity extends AppCompatActivity {
             return true;
         }
 
-        if(id == android.R.id.home){
+        if (id == android.R.id.home) {
             Log.e("Home", "Home");
             Intent intent = new Intent();
             setResult(RESULT_CANCELED, intent);

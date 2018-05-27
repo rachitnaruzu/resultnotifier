@@ -2,12 +2,8 @@ package com.resultnotifier.main;
 
 import java.util.ArrayList;
 
-/**
- * Created by User on 05-10-2015.
- */
 public class PublishedFragment extends MainFragment {
     public PublishedFragment() {
-        super.type = "published";
     }
 
     public void refreshFragmentFinal(){
@@ -15,15 +11,17 @@ public class PublishedFragment extends MainFragment {
         inflateArrayList(0, PUBLISHED_URL);
     }
     public void deleteSelectedItems(){
-        ArrayList<FileData> mItems = mListAdaptor.getAdapterItems();
+        final MyAdaptor listAdapter = getListAdaptor();
+        final DatabaseUtility dbUtil = getDatabaseUtility();
+        ArrayList<FileData> mItems = listAdapter.getAdapterItems();
         for(FileData fileData : mItems){
             if(fileData.isSelected){
                 dbUtil.deleteFile(fileData);
-                fileData.iscompleted = false;
+                fileData.mIsCompleted = false;
             }
         }
-        mListAdaptor.notifyDataSetChanged();
-        selectFlag = false;
+        listAdapter.notifyDataSetChanged();
+        setSelectedFlag(false);
     }
     public void onCreateViewFinal(){
         showLoading(true);
