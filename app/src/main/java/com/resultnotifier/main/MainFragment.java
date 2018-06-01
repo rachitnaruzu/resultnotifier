@@ -1,6 +1,5 @@
 package com.resultnotifier.main;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -12,7 +11,6 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.FileProvider;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.util.Base64;
 import android.util.Log;
 import android.view.ActionMode;
 import android.view.LayoutInflater;
@@ -34,38 +32,23 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
+import com.resultnotifier.main.service.RENServiceClient;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 
 public abstract class MainFragment extends Fragment {
-    public static final String DOMAIN = CommonUtility.DOMAIN;
-    public static final String KEY = CommonUtility.SECRET_KEY;
-    public static final String PUBLISHED_URL = DOMAIN + "/published/";
-    public static final String TOPMOST_URL = DOMAIN + "/topmost/";
-    public static final String FETCH_VIEWS_URL = DOMAIN + "/updateselfviews/";
-    public static final String INCREMENT_VIEW_URL = DOMAIN + "/incrementviews/";
-    public static final String FETCH_DATA_TYPES = DOMAIN + "/datatypes/";
-    public static final String RECENT_URL = DOMAIN + "/recent/";
-    final protected static char[] hexArray = "0123456789abcdef".toCharArray();
     private static final String TAG = "REN_MainFragment";
     private boolean mSelectFlag;
     private ListView mListView;
-    private Activity mMainActivity;
+    private MainActivity mMainActivity;
     private MyAdaptor mListAdaptor;
     private DatabaseUtility mDbUtil;
     private String mDataType;
@@ -80,9 +63,9 @@ public abstract class MainFragment extends Fragment {
     private SimpleMultiChoiceModeListener mMultiChoiceModeListener =
             new SimpleMultiChoiceModeListener();
     private int mVisibleCount;
-    private String mCurrentURL;
     private ArrayList<FileData> mAllFileDataItems;
     private boolean mThatsIt;
+    private RENServiceClient mRenServiceClient;
 
 
     public MainFragment() {
@@ -108,97 +91,41 @@ public abstract class MainFragment extends Fragment {
         mSelectFlag = isSelected;
     }
 
-    public static String bytesToHex(byte[] bytes) {
-        char[] hexChars = new char[bytes.length * 2];
-        for (int j = 0; j < bytes.length; j++) {
-            int v = bytes[j] & 0xFF;
-            hexChars[j * 2] = hexArray[v >>> 4];
-            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-        }
-        return new String(hexChars);
-    }
+    public abstract void fetchFiles(final RENServiceClient renServiceClient,
+                                    final int offset,
+                                    final String dataType,
+                                    final RENServiceClient.FetchFilesCallback filesResponse);
 
-    public static String encodeStringData(String key, String value) {
-        try {
-            byte[] keyBytes = key.getBytes();
-            SecretKeySpec signingKey = new SecretKeySpec(keyBytes, "HmacSHA256");
-            Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(signingKey);
-            byte[] rawHmac = mac.doFinal(value.getBytes());
-            return bytesToHex(rawHmac);
-        } catch (Exception e) {
-            Log.e("MainFragment", e.getMessage());
-        }
-        return null;
-    }
-
-    public static String getEncodedTimestamp() {
-        Calendar currentTime = Calendar.getInstance();
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        String ts = dateFormat.format(currentTime.getTime());
-        return Base64.encodeToString(ts.getBytes(), Base64.URL_SAFE);
-    }
-
-    public static Map<String, String> addSecureParams(Map<String, String> params) {
-        String ts = getEncodedTimestamp();
-        params.put("sec", ts);
-        params.put("sig", encodeStringData(KEY, ts));
-        return params;
-    }
-
-    void inflateArrayList(int offset, String url) {
-        Map<String, String> params = new HashMap<>();
-        params.put("offset", "" + offset);
-        params.put("datatypes", mDataType);
-        params = addSecureParams(params);
-        CustomRequest fetchRequest = new CustomRequest(Request.Method.POST, url, params,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-                            JSONArray jArray = response.getJSONArray("files");
-                            mThatsIt = jArray.length() < mVisibleCount;
-                            for (int i = 0; i < jArray.length(); i++) {
-                                JSONObject oneObject = jArray.getJSONObject(i);
-                                FileData filedata = new FileData();
-                                filedata.mDateCreated = oneObject.getString("datecreated");
-                                filedata.mDisplayName = oneObject.getString("displayname");
-                                filedata.mUrl = oneObject.getString("url");
-                                filedata.mDataType = oneObject.getString("datatype");
-                                filedata.mViews = oneObject.getString("views");
-                                filedata.mFileType = oneObject.getString("filetype");
-                                filedata.mFileId = oneObject.getString("fileid");
-                                filedata.mIsCompleted = mDbUtil.isFilePresent(filedata.mFileId);
-                                if (filedata.mIsCompleted) {
-                                    mDbUtil.updateViews(filedata);
-                                }
-                                mListAdaptor.add_items(filedata);
-                            }
-                            mRunningFlag = false;
-                            showLoading(false);
-                            mListAdaptor.notifyDataSetChanged();
-                            showNoContent(mListAdaptor.getCount() == 0);
-                            Log.i(TAG, response.toString());
-                            mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-                                @Override
-                                public void onRefresh() {
-                                    //showNoNetwork(false);
-                                    refreshFragment();
-                                }
-                            });
-                        } catch (Exception e) {
-                            VolleyLog.v(TAG, response.toString());
-                            Log.e(TAG, e.toString());
-                            e.printStackTrace();
-                            Log.e(TAG, response.toString());
-                        }
-                    }
-                }, new Response.ErrorListener() {
+    public void inflateArrayList(int offset) {
+        fetchFiles(mRenServiceClient, offset, mDataType, new RENServiceClient.FetchFilesCallback() {
             @Override
-            public void onErrorResponse(VolleyError error) {
-                VolleyLog.e(TAG, error.getMessage());
-                //displayNoConnectionFragment();
+            public void onSuccess(final List<FileData> files) {
+                Log.i(TAG, "Received files. count=" + files.size());
+                mThatsIt = files.size() < mVisibleCount;
+
+                for (final FileData fileData : files) {
+                    fileData.mIsCompleted = mDbUtil.isFilePresent(fileData.mFileId);
+                    if (fileData.mIsCompleted) {
+                        mDbUtil.updateViews(fileData);
+                    }
+                    mListAdaptor.add_items(fileData);
+                }
+
+                mRunningFlag = false;
+                showLoading(false);
+                mListAdaptor.notifyDataSetChanged();
+                showNoContent(mListAdaptor.getCount() == 0);
+                mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+                    @Override
+                    public void onRefresh() {
+                        refreshFragment();
+                    }
+                });
+            }
+
+            @Override
+            public void onError(final int error) {
+                Log.i(TAG, "Unable to fetch files. error=" + error);
                 mListAdaptor.clear();
                 mListAdaptor.notifyDataSetChanged();
                 mSnackBar.setText("No Network");
@@ -214,55 +141,6 @@ public abstract class MainFragment extends Fragment {
                 });
             }
         });
-        MyHTTPHandler.getInstance(mMainActivity.getApplicationContext()).addToRequestQueue(fetchRequest);
-    }
-
-    private String getJSONSelfViews(ArrayList<FileData> fileDataItems) {
-        StringBuilder selfViewsB = new StringBuilder("[");
-        boolean is_any_one_self_view = false;
-        for (FileData fileData : fileDataItems) {
-            //mListAdaptor.add_items(fileData);
-            if (!fileData.selfViews.equals("0")) {
-                is_any_one_self_view = true;
-                selfViewsB.append("{\"mFileId\":\"" + fileData.mFileId + "\",\"selfviews\":\"" + fileData.selfViews + "\"}" + ",");
-            }
-        }
-        selfViewsB.replace(selfViewsB.length() - 1, selfViewsB.length(), "]");
-        String selfViews = "[]";
-        if (is_any_one_self_view) selfViews = selfViewsB.toString();
-        return selfViews;
-        //return selfViewsB.toString();
-    }
-
-    private void updateSelfViews(ArrayList<FileData> fileDataItems) {
-        String selfViews = getJSONSelfViews(fileDataItems);
-        mAllFileDataItems = fileDataItems;
-        Map<String, String> params = new HashMap<>();
-        params.put("selfviews", selfViews);
-        params = addSecureParams(params);
-        if (!selfViews.equals("{}")) {
-            CustomRequest updateSelfViewsRequest = new CustomRequest(Request.Method.POST, FETCH_VIEWS_URL, params,
-                    new Response.Listener<JSONObject>() {
-                        @Override
-                        public void onResponse(JSONObject jsonObject) {
-                            try {
-                                Log.i("Update ", jsonObject.toString());
-                            } catch (Exception e) {
-                                VolleyLog.v("Update Error", jsonObject.toString());
-                                e.printStackTrace();
-                                Log.e("Update Error", jsonObject.toString());
-
-                            }
-                        }
-                    }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    VolleyLog.e("Update Error: ", error.getMessage());
-
-                }
-            });
-            MyHTTPHandler.getInstance(mMainActivity.getApplicationContext()).addToRequestQueue(updateSelfViewsRequest);
-        }
     }
 
     @Override
@@ -270,7 +148,9 @@ public abstract class MainFragment extends Fragment {
         Date date = new Date();
         SimpleDateFormat sdf;
         super.onCreate(savedInstanceState);
-        mMainActivity = getActivity();
+        mMainActivity = (MainActivity) getActivity();
+        mRenServiceClient = mMainActivity.getRENServiceClient();
+
         mDbUtil = DatabaseUtility.getInstance(mMainActivity.getApplicationContext());
         mDataType = mDbUtil.getCheckedDataTypes();
         mSelectFlag = false;
@@ -301,7 +181,8 @@ public abstract class MainFragment extends Fragment {
         setMultiChoice(mListView);
         MainActivity.setmSnackbar(mSnackBar);
 
-        updateSelfViews(mDbUtil.getAllFiles(false));
+        mAllFileDataItems = mDbUtil.getAllFiles(false);
+        mRenServiceClient.updateSelfViews(mAllFileDataItems);
         onCreateViewFinal();
 
         return vi;
@@ -350,25 +231,20 @@ public abstract class MainFragment extends Fragment {
         mSelectFlag = false;
     }
 
-    public void incrementViewsByOne(String fileid) {
-        mGlobalFileId = fileid;
-        Map<String, String> params = new HashMap<>();
-        params.put("mFileId", fileid);
-        params = addSecureParams(params);
-        CustomRequest updateSelfViewsRequest = new CustomRequest(Request.Method.POST, INCREMENT_VIEW_URL, params,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        //DatabaseUtility.getInstance(mMainActivity.getApplicationContext()).incrementViewsByOne(mGlobalFileId);
-                    }
-                }, new Response.ErrorListener() {
+    public void incrementViewsByOne(final String fileId) {
+        mGlobalFileId = fileId;
+        mRenServiceClient.incrementViewsByOne(fileId,
+                new RENServiceClient.IncrementViewsCallback() {
             @Override
-            public void onErrorResponse(VolleyError error) {
-                DatabaseUtility.getInstance(mMainActivity.getApplicationContext()).incrementSelfViewsByOne(mGlobalFileId);
-                VolleyLog.e("Increment Error: ", error.getMessage());
+            public void onSuccess() {
+                // no-op
+            }
+
+            @Override
+            public void onError(final int error) {
+                mDbUtil.incrementSelfViewsByOne(fileId);
             }
         });
-        MyHTTPHandler.getInstance(mMainActivity.getApplicationContext()).addToRequestQueue(updateSelfViewsRequest);
     }
 
     public void openFile(FileData fileData) {
@@ -423,9 +299,8 @@ public abstract class MainFragment extends Fragment {
 
     public abstract void onCreateViewFinal();
 
-    public void handleNonSaved(String url) {
-        this.mCurrentURL = url;
-        inflateArrayList(0, mCurrentURL);
+    public void handleNonSaved() {
+        inflateArrayList(0);
 
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -436,7 +311,8 @@ public abstract class MainFragment extends Fragment {
                     incrementViewsByOne(mItem.mFileId);
                 } else {
                     if (mItem.downloadjob == null || !mItem.getInProcess()) {
-                        mItem.downloadjob = new DownloadJob(mMainActivity, mItem, mListAdaptor);
+                        mItem.downloadjob = new DownloadJob(mMainActivity, mRenServiceClient,
+                                mItem, mListAdaptor);
                         //mListAdaptor.notifyDataSetChanged();
                     }
                 }
@@ -455,29 +331,20 @@ public abstract class MainFragment extends Fragment {
                     mVisibleCount = visibleItemCount;
                     if (!mRunningFlag) {
                         mRunningFlag = true;
-                        inflateArrayList(totalItemCount, mCurrentURL);
+                        inflateArrayList(totalItemCount);
                     }
                 }
             }
         });
     }
 
-    public void showLoading(boolean show) {
-        if (show) {
-            mSwipeRefreshLayout.post(new Runnable() {
-                @Override
-                public void run() {
-                    mSwipeRefreshLayout.setRefreshing(true);
-                }
-            });
-        } else {
-            mSwipeRefreshLayout.post(new Runnable() {
-                @Override
-                public void run() {
-                    mSwipeRefreshLayout.setRefreshing(false);
-                }
-            });
-        }
+    public void showLoading(final boolean show) {
+        mSwipeRefreshLayout.post(new Runnable() {
+            @Override
+            public void run() {
+                mSwipeRefreshLayout.setRefreshing(show);
+            }
+        });
     }
 
     public void showNoNetwork(boolean show) {
@@ -507,7 +374,8 @@ public abstract class MainFragment extends Fragment {
 
         @Override
         public void onClick(View v) {
-            filedata.downloadjob = new DownloadJob(mMainActivity, filedata, mListAdaptor);
+            filedata.downloadjob = new DownloadJob(mMainActivity, mRenServiceClient,
+                    filedata, mListAdaptor);
         }
     }
 

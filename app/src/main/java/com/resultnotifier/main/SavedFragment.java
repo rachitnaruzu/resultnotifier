@@ -5,12 +5,23 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
+import com.resultnotifier.main.service.RENServiceClient;
+
 import java.util.ArrayList;
 
 
 public class SavedFragment extends MainFragment {
 
     public SavedFragment() {
+    }
+
+    @Override
+    public void fetchFiles(
+            final RENServiceClient renServiceClient,
+            final int offset,
+            final String dataType,
+            final RENServiceClient.FetchFilesCallback filesResponse) {
+        //no-op
     }
 
     public void refreshFragmentFinal(){

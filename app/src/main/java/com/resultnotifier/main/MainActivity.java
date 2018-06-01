@@ -2,6 +2,7 @@ package com.resultnotifier.main;
 
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
@@ -11,6 +12,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Base64;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,13 +24,21 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
+import com.resultnotifier.main.service.RENServiceClient;
+import com.resultnotifier.main.service.RENServiceClientImpl;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -41,10 +51,10 @@ public class MainActivity extends AppCompatActivity {
     private ListView mDrawerList;
     private ActionBarDrawerToggle mDrawerToggle;
     private String[] mNavMenuTitles;
-    private TypedArray mNavMenuIcons;
-    private ArrayList<NavDrawerItem> mNavDrawerItems;
     private NavDrawerListAdapter mAdapter;
     private Toolbar mToolbar;
+    private DatabaseUtility mDatabaseUtility;
+    private RENServiceClient mRenServiceClient;
 
     public static Snackbar getmSnackbar() {
         return MainActivity.mSnackbar;
@@ -60,26 +70,35 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        Log.i(TAG, "Creating MainActivity");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.mmain);
 
-        requestDataTypes();
+        final MyHTTPHandler myHTTPHandler =  new MyHTTPHandler(getApplicationContext());
+        mRenServiceClient = new RENServiceClientImpl(myHTTPHandler);
+
+        fetchDataTypes();
 
         mToolbar = (Toolbar) findViewById(R.id.mtoolbar);
         setSupportActionBar(mToolbar);
-        mNavMenuTitles = getResources().getStringArray(R.array.nav_drawer_items);
-        mNavMenuIcons = getResources().obtainTypedArray(R.array.nav_drawer_icons);
-        mColors = getResources().getIntArray(R.array.dataType_icon_bg_colors);
+
+        final Resources resources = getResources();
+
+        mColors = resources.getIntArray(R.array.dataType_icon_bg_colors);
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mDrawerList = (ListView) findViewById(R.id.list_slidermenu);
-        mNavDrawerItems = new ArrayList<>();
-        for (int i = 0; i < mNavMenuTitles.length; i++) {
-            mNavDrawerItems.add(new NavDrawerItem(mNavMenuTitles[i], mNavMenuIcons.getResourceId(i, -1)));
-        }
 
-        mNavMenuIcons.recycle();
+        mNavMenuTitles = resources.getStringArray(R.array.nav_drawer_items);
+        final TypedArray navMenuIcons = resources.obtainTypedArray(R.array.nav_drawer_icons);
+        final ArrayList<NavDrawerItem> navDrawerItems = new ArrayList<>(mNavMenuTitles.length);
+        for (int i = 0; i < mNavMenuTitles.length; i++) {
+            navDrawerItems.add(new NavDrawerItem(mNavMenuTitles[i],
+                    navMenuIcons.getResourceId(i, -1)));
+        }
+        navMenuIcons.recycle();
+
         mDrawerList.setOnItemClickListener(new SlideMenuClickListener());
-        mAdapter = new NavDrawerListAdapter(getApplicationContext(), mNavDrawerItems);
+        mAdapter = new NavDrawerListAdapter(getApplicationContext(), navDrawerItems);
         mDrawerList.setAdapter(mAdapter);
         mAdapter.notifyDataSetChanged();
         mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
@@ -87,14 +106,16 @@ public class MainActivity extends AppCompatActivity {
                 R.string.app_name,
                 R.string.app_name
         );
-        //getSupportActionBar().setTitle(mNavMenuTitles[0]);
-        mDrawerLayout.setDrawerListener(mDrawerToggle);
+
+        mDrawerLayout.addDrawerListener(mDrawerToggle);
         if (savedInstanceState == null) {
             displayView(0);
         }
-        //getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        mDatabaseUtility = DatabaseUtility.getInstance(getApplicationContext());
+
         getSupportActionBar().setHomeButtonEnabled(true);
-        //displayView(0);
+        Log.i(TAG, "MainActivity created");
     }
 
     /**
@@ -147,7 +168,7 @@ public class MainActivity extends AppCompatActivity {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_OK) {
             if (mCurrent_Fragment != null) {
-                Log.e("Main_Activity", "back to main activity");
+                Log.e(TAG, "back to main activity");
                 mCurrent_Fragment.refreshFragment();
             }
         }
@@ -166,53 +187,42 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onAttachFragment(Fragment fragment) {
         super.onAttachFragment(fragment);
-
-
     }
 
-    private void requestDataTypes() {
-        Map<String, String> params = new HashMap<>();
-        params = MainFragment.addSecureParams(params);
-        CustomRequest fetchRequest = new CustomRequest(Request.Method.POST, MainFragment.FETCH_DATA_TYPES, params,
-                new Response.Listener<JSONObject>() {
-                    DatabaseUtility dbUtil = DatabaseUtility.getInstance(getApplicationContext());
-
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-                            JSONArray jArray = response.getJSONArray("datatypes");
-                            for (int i = 0; i < jArray.length(); i++) {
-                                FilterItem filterItem = new FilterItem();
-                                filterItem.datatype = jArray.getString(i);
-                                filterItem.is_checked = true;
-                                if (!dbUtil.isDataTypeAvailable(filterItem.datatype)) {
-                                    dbUtil.addDataType(filterItem);
-                                }
-                            }
-                            Log.i("Filter Success", response.toString());
-                        } catch (Exception e) {
-                            VolleyLog.v("Filter onResponse Error: ", response.toString());
-                            Log.e("onResponse Error: ", e.toString());
-                            e.printStackTrace();
-                            Log.e("onResponse Error: ", response.toString());
-
-                        }
-                    }
-                }, new Response.ErrorListener() {
+    private void fetchDataTypes() {
+        Log.i(TAG, "Requesting data types");
+        mRenServiceClient.fetchDataTypes(new RENServiceClient.FetchDataTypesCallback() {
             @Override
-            public void onErrorResponse(VolleyError error) {
-                VolleyLog.e("onErrorResponse Error: ", error.getMessage());
+            public void onSuccess(final List<String> dataTypes) {
+                saveDataTypes(dataTypes);
+            }
 
+            @Override
+            public void onError(final int error) {
+                Log.i(TAG, "Unable to fetch data types. error=" + error);
             }
         });
-        MyHTTPHandler.getInstance(getApplicationContext()).addToRequestQueue(fetchRequest);
+    }
+
+    public RENServiceClient getRENServiceClient() {
+        return mRenServiceClient;
+    }
+
+    private void saveDataTypes(final List<String> dataTypes) {
+        for (final String dataType : dataTypes) {
+            FilterItem filterItem = new FilterItem();
+            filterItem.datatype = dataType;
+            filterItem.is_checked = true;
+            if (!mDatabaseUtility.isDataTypeAvailable(filterItem.datatype)) {
+                mDatabaseUtility.addDataType(filterItem);
+            }
+        }
     }
 
     /**
-     * Diplaying fragment view for selected nav drawer list item
+     * Displaying fragment view for selected nav drawer list item
      */
     private void displayView(int position) {
-        //Fragment fragment = null;
         mCurrent_Fragment = null;
         switch (position) {
             case 0:
@@ -230,6 +240,8 @@ public class MainActivity extends AppCompatActivity {
             default:
                 break;
         }
+
+        Log.i(TAG, "Displaying Fragment. position=" + position);
         if (mCurrent_Fragment != null) {
             FragmentManager fragmentManager = getSupportFragmentManager();
             fragmentManager.beginTransaction().replace(R.id.frame_container, mCurrent_Fragment).commit();
@@ -237,7 +249,7 @@ public class MainActivity extends AppCompatActivity {
             getSupportActionBar().setTitle(mNavMenuTitles[position]);
             mDrawerLayout.closeDrawer(mDrawerList);
         } else {
-            Log.e("MainActivity", "Error in creating fragment");
+            Log.e(TAG, "Error in creating fragment. position=" + position);
         }
     }
 

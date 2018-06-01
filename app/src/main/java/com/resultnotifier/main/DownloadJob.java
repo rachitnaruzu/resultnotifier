@@ -8,6 +8,7 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
+import com.resultnotifier.main.service.RENServiceClient;
 
 import org.json.JSONObject;
 
@@ -24,18 +25,20 @@ import java.util.Map;
 public class DownloadJob {
 
     private final FileData mFile;
-    private final Activity mMainActivity;
     private final AsyncTask<String, Integer, Long> mDownloadFileTask;
     private File mFinalFile;
     private File mTempFile;
-    private String mGlobalFileId;
     private Exception mException;
+    private RENServiceClient mRenServiceClient;
 
-    public DownloadJob(final Activity mainActivityy, final FileData filedata, final MyAdaptor mListAdapter) {
-        this.mFile = filedata;
-        this.mTempFile = filedata.tempFile;
-        this.mMainActivity = mainActivityy;
-        this.mException = null;
+    public DownloadJob(final Activity mainActivity,
+                       final RENServiceClient renServiceClient,
+                       final FileData filedata,
+                       final MyAdaptor mListAdapter) {
+        mFile = filedata;
+        mTempFile = filedata.tempFile;
+        mException = null;
+        mRenServiceClient = renServiceClient;
 
         File root = android.os.Environment.getExternalStorageDirectory();
         File dir = new File(root.getAbsolutePath() + "/xmls");
@@ -98,7 +101,7 @@ public class DownloadJob {
                 mFinalFile = mTempFile;
                 mFile.mIsCompleted = true;
                 mFile.setInProcess(false);
-                DatabaseUtility dbUtil = DatabaseUtility.getInstance(mainActivityy.getApplicationContext());
+                DatabaseUtility dbUtil = DatabaseUtility.getInstance(mainActivity.getApplicationContext());
                 if (!dbUtil.isFilePresent(filedata.mFileId)) {
                     dbUtil.addFileData(mFile);
                 }
@@ -113,24 +116,7 @@ public class DownloadJob {
         mDownloadFileTask.execute(filedata.mUrl);
     }
 
-    public void incrementViewsByOne(String fileid) {
-        mGlobalFileId = fileid;
-        Map<String, String> params = new HashMap<>();
-        params.put("mFileId", fileid);
-        params = MainFragment.addSecureParams(params);
-        CustomRequest updateSelfViewsRequest = new CustomRequest(Request.Method.POST, MainFragment.INCREMENT_VIEW_URL, params,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        //DatabaseUtility.getInstance(mMainActivity.getApplicationContext()).incrementViewsByOne(mGlobalFileId);
-                    }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                DatabaseUtility.getInstance(mMainActivity.getApplicationContext()).incrementSelfViewsByOne(mGlobalFileId);
-                VolleyLog.e("Error: ", error.getMessage());
-            }
-        });
-        MyHTTPHandler.getInstance(mMainActivity.getApplicationContext()).addToRequestQueue(updateSelfViewsRequest);
+    private void incrementViewsByOne(final String fileId) {
+        mRenServiceClient.incrementViewsByOne(fileId, null);
     }
 }

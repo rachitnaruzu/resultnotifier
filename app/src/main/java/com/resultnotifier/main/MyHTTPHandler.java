@@ -10,7 +10,7 @@ public class MyHTTPHandler {
     private static MyHTTPHandler mMyHttpHandler;
     private final RequestQueue mRequestQueue;
 
-    private MyHTTPHandler(Context context) {
+    public MyHTTPHandler(Context context) {
         mRequestQueue = Volley.newRequestQueue(context.getApplicationContext());
     }
 

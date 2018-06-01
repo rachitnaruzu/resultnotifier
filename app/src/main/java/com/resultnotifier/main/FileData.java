@@ -6,16 +6,16 @@ import android.widget.ProgressBar;
 import java.io.File;
 
 public class FileData {
-    String mDisplayName;
-    String mFileType;
-    String mFileId;
-    String mDateCreated;
-    String mDataType;
-    String mUrl;
-    String mViews;
-    String selfViews;
+    public String mDisplayName;
+    public String mFileType;
+    public String mFileId;
+    public String mDateCreated;
+    public String mDataType;
+    public String mUrl;
+    public String mViews;
+    public String selfViews;
     int color;
-    boolean mIsCompleted;
+    public boolean mIsCompleted;
     boolean displaySelected;
     boolean isSelected;
     DownloadJob downloadjob;

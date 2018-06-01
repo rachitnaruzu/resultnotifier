@@ -1,15 +1,25 @@
 package com.resultnotifier.main;
 
+import com.resultnotifier.main.service.RENServiceClient;
+
 import java.util.ArrayList;
 
 public class TopmostFragment extends MainFragment {
     public TopmostFragment() {
     }
 
+    @Override
+    public void fetchFiles(final RENServiceClient renServiceClient,
+                           final int offset, final String dataType,
+                           final RENServiceClient.FetchFilesCallback filesResponse) {
+        renServiceClient.fetchTopMostFiles(offset, dataType, filesResponse);
+    }
+
     public void refreshFragmentFinal(){
         showLoading(true);
-        inflateArrayList(0, TOPMOST_URL);
+        inflateArrayList(0);
     }
+
     public void deleteSelectedItems(){
         final MyAdaptor listAdaptor = getListAdaptor();
         final DatabaseUtility dbUtil = getDatabaseUtility();
@@ -23,8 +33,9 @@ public class TopmostFragment extends MainFragment {
         listAdaptor.notifyDataSetChanged();
         setSelectedFlag(false);
     }
+
     public void onCreateViewFinal(){
         showLoading(true);
-        handleNonSaved(TOPMOST_URL);
+        handleNonSaved();
     }
 }
