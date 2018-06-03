@@ -74,8 +74,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.mmain);
 
-        final MyHTTPHandler myHTTPHandler =  new MyHTTPHandler(getApplicationContext());
-        mRenServiceClient = new RENServiceClientImpl(myHTTPHandler);
+        mRenServiceClient = AppState.getRenServiceClient(getApplicationContext());
 
         fetchDataTypes();
 

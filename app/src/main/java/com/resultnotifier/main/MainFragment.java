@@ -137,7 +137,7 @@ public abstract class MainFragment extends Fragment {
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mMainActivity = (MainActivity) getActivity();
-        mRenServiceClient = mMainActivity.getRENServiceClient();
+        mRenServiceClient = AppState.getRenServiceClient(mMainActivity.getApplicationContext());
 
         mDatabaseUtility = DatabaseUtility.getInstance(mMainActivity.getApplicationContext());
         mDataType = mDatabaseUtility.getCheckedDataTypes();
