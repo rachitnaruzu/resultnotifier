@@ -36,7 +36,7 @@ public class DownloadJob {
                        final FileData filedata,
                        final MyAdaptor mListAdapter) {
         mFile = filedata;
-        mTempFile = filedata.tempFile;
+        mTempFile = filedata.getTempFile();
         mException = null;
         mRenServiceClient = renServiceClient;
 
@@ -45,8 +45,8 @@ public class DownloadJob {
         if (!dir.exists()) {
             dir.mkdirs();
         }
-        this.mTempFile = new File(dir, mFile.mFileId + ".temp");
-        this.mFinalFile = new File(dir, mFile.mFileId + "." + mFile.mFileType);
+        this.mTempFile = new File(dir, mFile.getFileId() + ".temp");
+        this.mFinalFile = new File(dir, mFile.getFileId() + "." + mFile.getFileType());
 
         mDownloadFileTask = new AsyncTask<String, Integer, Long>() {
 
@@ -99,13 +99,13 @@ public class DownloadJob {
 
                 mTempFile.renameTo(mFinalFile);
                 mFinalFile = mTempFile;
-                mFile.mIsCompleted = true;
+                mFile.setIsCompleted(true);
                 mFile.setInProcess(false);
                 DatabaseUtility dbUtil = DatabaseUtility.getInstance(mainActivity.getApplicationContext());
-                if (!dbUtil.isFilePresent(filedata.mFileId)) {
+                if (!dbUtil.isFilePresent(filedata.getFileId())) {
                     dbUtil.addFileData(mFile);
                 }
-                incrementViewsByOne(mFile.mFileId);
+                incrementViewsByOne(mFile.getFileId());
                 mListAdapter.notifyDataSetChanged();
             }
 
@@ -113,7 +113,7 @@ public class DownloadJob {
                 mFile.setProgress(progress[0]);
             }
         };
-        mDownloadFileTask.execute(filedata.mUrl);
+        mDownloadFileTask.execute(filedata.getUrl());
     }
 
     private void incrementViewsByOne(final String fileId) {

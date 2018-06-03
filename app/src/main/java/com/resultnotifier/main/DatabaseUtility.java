@@ -181,13 +181,13 @@ public class DatabaseUtility extends SQLiteOpenHelper {
 
     public void updateViews(FileData fileData) {
         SQLiteDatabase db = this.getWritableDatabase();
-        db.execSQL(UPDATE_VIEWS_CMD, new String[]{fileData.mViews, "0", fileData.mFileId});
+        db.execSQL(UPDATE_VIEWS_CMD, new String[]{fileData.getViews(), "0", fileData.getFileId()});
         //db.close();
     }
 
     public void deleteFile(FileData fileData) {
         SQLiteDatabase db = this.getWritableDatabase();
-        db.execSQL(DELETE_FILE_CMD, new String[]{fileData.mFileId});
+        db.execSQL(DELETE_FILE_CMD, new String[]{fileData.getFileId()});
         //db.close();
     }
 
@@ -253,13 +253,13 @@ public class DatabaseUtility extends SQLiteOpenHelper {
     public void addFileData(FileData filedata) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put(DISPLAY_NAME, filedata.mDisplayName);
-        values.put(FILE_ID, filedata.mFileId);
-        values.put(URL, filedata.mUrl);
-        values.put(FILE_TYPE, filedata.mFileType);
-        values.put(DATA_TYPE, filedata.mDataType);
-        values.put(DATE_CREATED, filedata.mDateCreated);
-        values.put(VIEWS, filedata.mViews);
+        values.put(DISPLAY_NAME, filedata.getDisplayName());
+        values.put(FILE_ID, filedata.getFileId());
+        values.put(URL, filedata.getUrl());
+        values.put(FILE_TYPE, filedata.getFileType());
+        values.put(DATA_TYPE, filedata.getDataType());
+        values.put(DATE_CREATED, filedata.getDateCreated());
+        values.put(VIEWS, filedata.getViews());
         db.insert(TABLE_FILES, null, values);
         //db.close();
     }
@@ -287,14 +287,14 @@ public class DatabaseUtility extends SQLiteOpenHelper {
         if (cursor.moveToFirst()) {
             do {
                 FileData filedata = new FileData();
-                filedata.mDisplayName = cursor.getString(cursor.getColumnIndex(DISPLAY_NAME));
-                filedata.mFileType = cursor.getString(cursor.getColumnIndex(FILE_TYPE));
-                filedata.mFileId = cursor.getString(cursor.getColumnIndex(FILE_ID));
-                filedata.mDateCreated = cursor.getString(cursor.getColumnIndex(DATE_CREATED));
-                filedata.mDataType = cursor.getString(cursor.getColumnIndex(DATA_TYPE));
-                filedata.mUrl = cursor.getString(cursor.getColumnIndex(URL));
-                filedata.mViews = "" + cursor.getInt(cursor.getColumnIndex(VIEWS));
-                filedata.selfViews = "" + cursor.getInt(cursor.getColumnIndex(SELF_VIEWS));
+                filedata.setDisplayName(cursor.getString(cursor.getColumnIndex(DISPLAY_NAME)));
+                filedata.setFileType(cursor.getString(cursor.getColumnIndex(FILE_TYPE)));
+                filedata.setFileId(cursor.getString(cursor.getColumnIndex(FILE_ID)));
+                filedata.setDateCreated(cursor.getString(cursor.getColumnIndex(DATE_CREATED)));
+                filedata.setDataType(cursor.getString(cursor.getColumnIndex(DATA_TYPE)));
+                filedata.setUrl(cursor.getString(cursor.getColumnIndex(URL)));
+                filedata.setViews("" + cursor.getInt(cursor.getColumnIndex(VIEWS)));
+                filedata.setSelfViews("" + cursor.getInt(cursor.getColumnIndex(SELF_VIEWS)));
                 mItems.add(filedata);
             } while (cursor.moveToNext());
         }

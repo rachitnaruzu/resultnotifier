@@ -25,9 +25,9 @@ public class TopmostFragment extends MainFragment {
         final DatabaseUtility dbUtil = getDatabaseUtility();
         ArrayList<FileData> mItems = listAdaptor.getAdapterItems();
         for(FileData fileData : mItems){
-            if(fileData.isSelected){
+            if(fileData.isSelected()){
                 dbUtil.deleteFile(fileData);
-                fileData.mIsCompleted = false;
+                fileData.setIsCompleted(false);
             }
         }
         listAdaptor.notifyDataSetChanged();

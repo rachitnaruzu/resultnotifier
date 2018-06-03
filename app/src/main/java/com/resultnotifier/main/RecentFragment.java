@@ -25,9 +25,9 @@ public class RecentFragment extends MainFragment {
         final DatabaseUtility dbUtil = getDatabaseUtility();
         ArrayList<FileData> mItems = listAdapter.getAdapterItems();
         for(FileData fileData : mItems){
-            if(fileData.isSelected){
+            if(fileData.isSelected()){
                 dbUtil.deleteFile(fileData);
-                fileData.mIsCompleted = false;
+                fileData.setIsSelected(false);
             }
         }
         listAdapter.notifyDataSetChanged();

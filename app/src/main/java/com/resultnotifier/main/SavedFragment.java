@@ -29,8 +29,8 @@ public class SavedFragment extends MainFragment {
         final MyAdaptor listAdaptor = getListAdaptor();
         ArrayList<FileData> fileDataItems =  dbUtil.getAllFiles(dbUtil.getFilerSavedCheck());
         for(FileData fileData : fileDataItems){
+            fileData.setIsCompleted(true);
             listAdaptor.add_items(fileData);
-            fileData.mIsCompleted = true;
         }
         listAdaptor.notifyDataSetChanged();
         showNoContent(listAdaptor.getCount() == 0);
@@ -42,13 +42,13 @@ public class SavedFragment extends MainFragment {
         ArrayList<FileData> mItems = new ArrayList<>(listAdaptor.getAdapterItems());
         listAdaptor.clear();// = new MyAdaptor(mainActivity);
         for(FileData fileData : mItems){
-            if(fileData.isSelected){
+            if(fileData.isSelected()){
                 dbUtil.deleteFile(fileData);
             } else {
                 listAdaptor.add_items(fileData);
             }
         }
-        //lv.setAdapter(listAdaptor);
+
         listAdaptor.notifyDataSetChanged();
         setSelectedFlag(false);
         showNoContent(listAdaptor.getCount() == 0);
@@ -62,7 +62,7 @@ public class SavedFragment extends MainFragment {
         ArrayList<FileData> fileDataItems = dbUtil.getAllFiles(dbUtil.getFilerSavedCheck());
             for(FileData fileData : fileDataItems){
                 listAdaptor.add_items(fileData);
-                fileData.mIsCompleted = true;
+                fileData.setIsCompleted(true);
             }
         listAdaptor.notifyDataSetChanged();
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -70,7 +70,7 @@ public class SavedFragment extends MainFragment {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 FileData mItem = (FileData) listAdaptor.getItem(position);
                 openFile(mItem);
-                incrementViewsByOne(mItem.mFileId);
+                incrementViewsByOne(mItem.getFileId());
             }
         });
         showNoContent(listAdaptor.getCount() == 0);

@@ -90,15 +90,15 @@ public class MyAdaptor extends BaseAdapter {
         TextView dataTypeIcon = (TextView) vi.findViewById(R.id.dataTypeIcon);
 
 
-        text.setText(mItem.mDisplayName);
-        viewsView.setText(getPrintableViews(Integer.parseInt(mItem.mViews)));
-        String printableDate = getPrintableDate(mItem.mDateCreated);
+        text.setText(mItem.getDisplayName());
+        viewsView.setText(getPrintableViews(Integer.parseInt(mItem.getViews())));
+        String printableDate = getPrintableDate(mItem.getDateCreated());
         dateView.setText(printableDate);
-        dataTypeIcon.setText((mItem.mDataType.charAt(0) + "").toUpperCase());
+        dataTypeIcon.setText((mItem.getDataType().charAt(0) + "").toUpperCase());
         GradientDrawable bgShape = (GradientDrawable) dataTypeIcon.getBackground();
-        bgShape.setColor(mItem.color);
+        bgShape.setColor(mItem.getColor());
 
-        if (mItem.mIsCompleted) {
+        if (mItem.isCompleted()) {
             //progressBar.setProgress(100);
             vi.setBackgroundColor(ContextCompat.getColor(vi.getContext(), R.color.main_list_bg_download_complete));
 
@@ -121,7 +121,7 @@ public class MyAdaptor extends BaseAdapter {
         }
         handleCheck(dataTypeIcon, checkIcon, mItem);
 
-        if (!mItem.getInProcess()) {
+        if (!mItem.isInProcess()) {
             progressBar.setVisibility(View.INVISIBLE);
         }
         return vi;
@@ -176,8 +176,8 @@ public class MyAdaptor extends BaseAdapter {
     }
 
     private void handleCheck(View dataTypeIcon, View checkIcon, FileData mItem) {
-        if (mItem.isSelected) {
-            if (mItem.displaySelected) {
+        if (mItem.isSelected()) {
+            if (mItem.isDisplaySelected()) {
                 //Log.e(TAG, "displaySelected is true!!!");
                 dataTypeIcon.setVisibility(View.INVISIBLE);
                 checkIcon.setVisibility(View.VISIBLE);
@@ -193,10 +193,10 @@ public class MyAdaptor extends BaseAdapter {
                 AnimatorSet card_flip_right_in = (AnimatorSet) AnimatorInflater.loadAnimator(mainActivity, R.animator.card_flip_right_in);
                 card_flip_right_in.setTarget(checkIcon);
                 card_flip_right_in.start();
-                mItem.displaySelected = true;
+                mItem.setIsDisplaySelected(true);
             }
         } else {
-            if (mItem.displaySelected) {
+            if (mItem.isDisplaySelected()) {
                 AnimatorSet card_flip_right_out = (AnimatorSet) AnimatorInflater.loadAnimator(mainActivity, R.animator.card_flip_right_out);
                 card_flip_right_out.setTarget(checkIcon);
                 card_flip_right_out.start();
@@ -207,7 +207,7 @@ public class MyAdaptor extends BaseAdapter {
                 AnimatorSet card_flip_left_in = (AnimatorSet) AnimatorInflater.loadAnimator(mainActivity, R.animator.card_flip_left_in);
                 card_flip_left_in.setTarget(dataTypeIcon);
                 card_flip_left_in.start();
-                mItem.displaySelected = false;
+                mItem.setIsDisplaySelected(false);
             } else {
                 checkIcon.setVisibility(View.INVISIBLE);
                 dataTypeIcon.setVisibility(View.VISIBLE);

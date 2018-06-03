@@ -28,21 +28,11 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.android.volley.Request;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.VolleyLog;
 import com.resultnotifier.main.service.RENServiceClient;
 
-import org.json.JSONObject;
-
 import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public abstract class MainFragment extends Fragment {
     private static final String TAG = "REN_MainFragment";
@@ -50,7 +40,7 @@ public abstract class MainFragment extends Fragment {
     private ListView mListView;
     private MainActivity mMainActivity;
     private MyAdaptor mListAdaptor;
-    private DatabaseUtility mDbUtil;
+    private DatabaseUtility mDatabaseUtility;
     private String mDataType;
     private String mGlobalFileId;
     private Snackbar mSnackBar;
@@ -76,7 +66,7 @@ public abstract class MainFragment extends Fragment {
     }
 
     public DatabaseUtility getDatabaseUtility() {
-        return mDbUtil;
+        return mDatabaseUtility;
     }
 
     public ListView getListView() {
@@ -104,9 +94,9 @@ public abstract class MainFragment extends Fragment {
                 mThatsIt = files.size() < mVisibleCount;
 
                 for (final FileData fileData : files) {
-                    fileData.mIsCompleted = mDbUtil.isFilePresent(fileData.mFileId);
-                    if (fileData.mIsCompleted) {
-                        mDbUtil.updateViews(fileData);
+                    fileData.setIsCompleted(mDatabaseUtility.isFilePresent(fileData.getFileId()));
+                    if (fileData.isCompleted()) {
+                        mDatabaseUtility.updateViews(fileData);
                     }
                     mListAdaptor.add_items(fileData);
                 }
@@ -144,27 +134,25 @@ public abstract class MainFragment extends Fragment {
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        Date date = new Date();
-        SimpleDateFormat sdf;
+    public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mMainActivity = (MainActivity) getActivity();
         mRenServiceClient = mMainActivity.getRENServiceClient();
 
-        mDbUtil = DatabaseUtility.getInstance(mMainActivity.getApplicationContext());
-        mDataType = mDbUtil.getCheckedDataTypes();
+        mDatabaseUtility = DatabaseUtility.getInstance(mMainActivity.getApplicationContext());
+        mDataType = mDatabaseUtility.getCheckedDataTypes();
         mSelectFlag = false;
         mThatsIt = false;
-        Log.i("Oncreate", "Oncreate");
+        Log.i(TAG, "Oncreate");
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        Log.i("Oncreateview", "Oncreateview");
+        Log.i(TAG, "Oncreateview");
         View vi = inflater.inflate(R.layout.result, container, false);
         mFragmentView = vi;
-        mSnackBar = Snackbar.make(vi.findViewById(R.id.myCoordinatorLayout), R.string.no_network_message, Snackbar.LENGTH_LONG);
-
+        mSnackBar = Snackbar.make(vi.findViewById(R.id.myCoordinatorLayout),
+                R.string.no_network_message, Snackbar.LENGTH_LONG);
 
         mListView = (ListView) vi.findViewById(R.id.listview);
         mListAdaptor = new MyAdaptor(mMainActivity);
@@ -181,7 +169,7 @@ public abstract class MainFragment extends Fragment {
         setMultiChoice(mListView);
         MainActivity.setmSnackbar(mSnackBar);
 
-        mAllFileDataItems = mDbUtil.getAllFiles(false);
+        mAllFileDataItems = mDatabaseUtility.getAllFiles(false);
         mRenServiceClient.updateSelfViews(mAllFileDataItems);
         onCreateViewFinal();
 
@@ -195,7 +183,7 @@ public abstract class MainFragment extends Fragment {
     }
 
     public void refreshFragment() {
-        mDataType = mDbUtil.getCheckedDataTypes();
+        mDataType = mDatabaseUtility.getCheckedDataTypes();
         mSelectFlag = false;
         mThatsIt = false;
         mListAdaptor.clear();
@@ -210,9 +198,8 @@ public abstract class MainFragment extends Fragment {
     private void cancelSelect() {
         ArrayList<FileData> mItems = mListAdaptor.getAdapterItems();
         for (FileData fileData : mItems) {
-            if (fileData.isSelected) {
-                fileData.isSelected = false;
-                //fileData.displaySelected = false;
+            if (fileData.isSelected()) {
+                fileData.setIsSelected(false);
             }
         }
         mMultiChoiceModeListener.exitActionMode();
@@ -224,7 +211,7 @@ public abstract class MainFragment extends Fragment {
                 // Do something after 500ms
                 ArrayList<FileData> mItems = mListAdaptor.getAdapterItems();
                 for (FileData fileData : mItems) {
-                    fileData.displaySelected = false;
+                    fileData.setIsDisplaySelected(false);
                 }
             }
         }, 500);
@@ -235,25 +222,25 @@ public abstract class MainFragment extends Fragment {
         mGlobalFileId = fileId;
         mRenServiceClient.incrementViewsByOne(fileId,
                 new RENServiceClient.IncrementViewsCallback() {
-            @Override
-            public void onSuccess() {
-                // no-op
-            }
+                    @Override
+                    public void onSuccess() {
+                        // no-op
+                    }
 
-            @Override
-            public void onError(final int error) {
-                mDbUtil.incrementSelfViewsByOne(fileId);
-            }
-        });
+                    @Override
+                    public void onError(final int error) {
+                        mDatabaseUtility.incrementSelfViewsByOne(fileId);
+                    }
+                });
     }
 
-    public void openFile(FileData fileData) {
+    public void openFile(final FileData fileData) {
         File root = android.os.Environment.getExternalStorageDirectory();
         File dir = new File(root.getAbsolutePath() + "/xmls");
         if (!dir.exists()) {
             dir.mkdirs();
         }
-        File file = new File(dir, fileData.mFileId + "." + fileData.mFileType);
+        File file = new File(dir, fileData.getFileId() + "." + fileData.getFileType());
         if (!file.exists()) {
 
             Snackbar snackbar = Snackbar
@@ -265,7 +252,7 @@ public abstract class MainFragment extends Fragment {
             return;
         }
         MimeTypeMap myMime = MimeTypeMap.getSingleton();
-        String mimeType = myMime.getMimeTypeFromExtension(fileData.mFileType);
+        String mimeType = myMime.getMimeTypeFromExtension(fileData.getFileType());
 
         Uri apkURI = FileProvider.getUriForFile(
                 mMainActivity, mMainActivity.getPackageName() + ".provider", file);
@@ -304,16 +291,18 @@ public abstract class MainFragment extends Fragment {
 
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                FileData mItem = (FileData) mListAdaptor.getItem(position);
-                if (mItem.mIsCompleted) {
-                    openFile(mItem);
-                    incrementViewsByOne(mItem.mFileId);
+            public void onItemClick(final AdapterView<?> parent,
+                                    final View view,
+                                    final int position,
+                                    final long id) {
+                final FileData file = (FileData) mListAdaptor.getItem(position);
+                if (file.isCompleted()) {
+                    openFile(file);
+                    incrementViewsByOne(file.getFileId());
                 } else {
-                    if (mItem.downloadjob == null || !mItem.getInProcess()) {
-                        mItem.downloadjob = new DownloadJob(mMainActivity, mRenServiceClient,
-                                mItem, mListAdaptor);
-                        //mListAdaptor.notifyDataSetChanged();
+                    if (file.getDownloadjob() == null || !file.isInProcess()) {
+                        file.setDownloadjob(new DownloadJob(mMainActivity, mRenServiceClient,
+                                file, mListAdaptor));
                     }
                 }
             }
@@ -374,8 +363,8 @@ public abstract class MainFragment extends Fragment {
 
         @Override
         public void onClick(View v) {
-            filedata.downloadjob = new DownloadJob(mMainActivity, mRenServiceClient,
-                    filedata, mListAdaptor);
+            filedata.setDownloadjob(new DownloadJob(mMainActivity, mRenServiceClient,
+                    filedata, mListAdaptor));
         }
     }
 
@@ -399,12 +388,12 @@ public abstract class MainFragment extends Fragment {
         public void onItemCheckedStateChanged(ActionMode mode, int position,
                                               long id, boolean checked) {
             FileData fileData = (FileData) mListAdaptor.getItem(position);
-            if (fileData.mIsCompleted) {
+            if (fileData.isCompleted()) {
                 completed_count += checked ? 1 : -1;
             } else {
                 incompleted_count += checked ? 1 : -1;
             }
-            fileData.isSelected = checked;
+            fileData.setIsSelected(checked);
             mListAdaptor.notifyDataSetChanged();
             feed_update_count.setText(String.valueOf(completed_count + incompleted_count));
             if (incompleted_count > 0) {
@@ -418,8 +407,8 @@ public abstract class MainFragment extends Fragment {
             ArrayList<FileData> mItems = mListAdaptor.getAdapterItems();
             String msg = "";
             for (FileData fileData : mItems) {
-                if (fileData.isSelected) {
-                    msg += fileData.mDisplayName + "\n" + fileData.mUrl + "\n\n";
+                if (fileData.isSelected()) {
+                    msg += fileData.getDisplayName() + "\n" + fileData.getUrl() + "\n\n";
                 }
             }
             return msg;

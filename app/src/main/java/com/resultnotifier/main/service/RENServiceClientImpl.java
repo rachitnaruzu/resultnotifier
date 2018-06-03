@@ -187,13 +187,13 @@ public class RENServiceClientImpl implements RENServiceClient {
                             for (int i = 0; i < jArray.length(); i++) {
                                 final JSONObject oneObject = jArray.getJSONObject(i);
                                 final FileData fileData = new FileData();
-                                fileData.mDateCreated = oneObject.getString("datecreated");
-                                fileData.mDisplayName = oneObject.getString("displayname");
-                                fileData.mUrl = oneObject.getString("url");
-                                fileData.mDataType = oneObject.getString("datatype");
-                                fileData.mViews = oneObject.getString("views");
-                                fileData.mFileType = oneObject.getString("filetype");
-                                fileData.mFileId = oneObject.getString("fileid");
+                                fileData.setDateCreated(oneObject.getString("datecreated"));
+                                fileData.setDisplayName(oneObject.getString("displayname"));
+                                fileData.setUrl(oneObject.getString("url"));
+                                fileData.setDataType(oneObject.getString("datatype"));
+                                fileData.setViews(oneObject.getString("views"));
+                                fileData.setFileType(oneObject.getString("filetype"));
+                                fileData.setFileId(oneObject.getString("fileid"));
                                 files.add(fileData);
                             }
                             fetchFilesCallback.onSuccess(files);
@@ -218,10 +218,10 @@ public class RENServiceClientImpl implements RENServiceClient {
         final StringBuilder selfViewsB = new StringBuilder("[");
         boolean is_any_one_self_view = false;
         for (final FileData fileData : fileDataItems) {
-            if (!fileData.selfViews.equals("0")) {
+            if (!fileData.getSelfViews().equals("0")) {
                 is_any_one_self_view = true;
-                selfViewsB.append("{\"mFileId\":\"" + fileData.mFileId + "\",\"selfviews\":\""
-                        + fileData.selfViews + "\"}" + ",");
+                selfViewsB.append("{\"mFileId\":\"" + fileData.getFileId() + "\",\"selfviews\":\""
+                        + fileData.getSelfViews() + "\"}" + ",");
             }
         }
         selfViewsB.replace(selfViewsB.length() - 1, selfViewsB.length(), "]");
