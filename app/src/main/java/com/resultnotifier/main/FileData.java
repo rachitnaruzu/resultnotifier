@@ -18,9 +18,7 @@ public class FileData {
     private boolean mIsCompleted;
     private boolean mIsDisplaySelected;
     private boolean mIsSelected;
-    private DownloadJob mDownloadJob;
-    private File mTempFile;
-    private boolean mInProcess;
+    private boolean mIsDownloadInProcess;
     private ProgressBar mProgressBar;
 
     public String getDisplayName() {
@@ -71,16 +69,8 @@ public class FileData {
         return mIsSelected;
     }
 
-    public DownloadJob getDownloadjob() {
-        return mDownloadJob;
-    }
-
-    public File getTempFile() {
-        return mTempFile;
-    }
-
-    public boolean isInProcess() {
-        return mInProcess;
+    public boolean isDownloadInProcess() {
+        return mIsDownloadInProcess;
     }
 
     public ProgressBar getProgressBar() {
@@ -135,14 +125,6 @@ public class FileData {
         mIsSelected = isSelected;
     }
 
-    public void setDownloadjob(final DownloadJob downloadJob) {
-        mDownloadJob = downloadJob;
-    }
-
-    public void setTempFile(final File tempFile) {
-        mTempFile = tempFile;
-    }
-
     public FileData() {
         mIsCompleted = false;
         mIsSelected = false;
@@ -151,7 +133,7 @@ public class FileData {
         mViews = "0";
         mColor = MainActivity.getRandomColor();
         mProgressBar = null;
-        mInProcess = false;
+        mIsDownloadInProcess = false;
     }
 
     public FileData(String displayName, String fileType, String fileId, String dateCreated,
@@ -166,8 +148,8 @@ public class FileData {
         mIsCompleted = false;
     }
 
-    public void setInProcess(final boolean inProcess) {
-        this.mInProcess = inProcess;
+    public void setDownloadInProcess(final boolean inProcess) {
+        this.mIsDownloadInProcess = inProcess;
     }
 
     public void setProgressBar(final ProgressBar progressBar) {

@@ -121,7 +121,7 @@ public class MyAdaptor extends BaseAdapter {
         }
         handleCheck(dataTypeIcon, checkIcon, mItem);
 
-        if (!mItem.isInProcess()) {
+        if (!mItem.isDownloadInProcess()) {
             progressBar.setVisibility(View.INVISIBLE);
         }
         return vi;

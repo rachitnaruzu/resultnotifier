@@ -7,6 +7,8 @@ import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerThread;
+import android.support.annotation.WorkerThread;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.FileProvider;
@@ -28,6 +30,7 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.resultnotifier.main.downloader.FileDownloader;
 import com.resultnotifier.main.service.RENServiceClient;
 
 import java.io.File;
@@ -36,6 +39,7 @@ import java.util.List;
 
 public abstract class MainFragment extends Fragment {
     private static final String TAG = "REN_MainFragment";
+    private static final String BACKGROUND_THREAD_NAME = "file_downloader_thread";
     private boolean mSelectFlag;
     private ListView mListView;
     private MainActivity mMainActivity;
@@ -55,6 +59,8 @@ public abstract class MainFragment extends Fragment {
     private ArrayList<FileData> mAllFileDataItems;
     private boolean mThatsIt;
     private RENServiceClient mRenServiceClient;
+    private FileDownloader mFileDownloader;
+    private Handler mBackgroundHandler;
 
 
     public MainFragment() {
@@ -70,10 +76,6 @@ public abstract class MainFragment extends Fragment {
 
     public ListView getListView() {
         return mListView;
-    }
-
-    public SwipeRefreshLayout getSwipeRefreshLayout() {
-        return mSwipeRefreshLayout;
     }
 
     public void setSelectedFlag(boolean isSelected) {
@@ -102,7 +104,7 @@ public abstract class MainFragment extends Fragment {
 
                 showLoading(false);
                 mFilesAdaptor.notifyDataSetChanged();
-                showNoContent(mFilesAdaptor.getCount() == 0);
+                showNoContent(mFilesAdaptor.isEmpty());
                 mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
                     @Override
                     public void onRefresh() {
@@ -135,7 +137,13 @@ public abstract class MainFragment extends Fragment {
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mMainActivity = (MainActivity) getActivity();
+
         mRenServiceClient = AppState.getRenServiceClient(mMainActivity.getApplicationContext());
+        mFileDownloader = AppState.getFileDownloader();
+
+        final HandlerThread handlerThread = new HandlerThread(BACKGROUND_THREAD_NAME);
+        handlerThread.start();
+        mBackgroundHandler = new Handler(handlerThread.getLooper());
 
         mDatabaseUtility = DatabaseUtility.getInstance(mMainActivity.getApplicationContext());
         mDataType = mDatabaseUtility.getCheckedDataTypes();
@@ -178,6 +186,8 @@ public abstract class MainFragment extends Fragment {
     public void onDestroy() {
         super.onDestroy();
         mMultiChoiceModeListener.exitActionMode();
+        mBackgroundHandler.getLooper().quitSafely();
+        mBackgroundHandler = null;
     }
 
     public void refreshFragment() {
@@ -244,7 +254,17 @@ public abstract class MainFragment extends Fragment {
             Snackbar snackbar = Snackbar
                     .make(mFragmentView.findViewById(R.id.myCoordinatorLayout),
                             "File does not exists", Snackbar.LENGTH_INDEFINITE)
-                    .setAction("REDOWNLOAD", new SnackBarFileDownloadClickListener(fileData));
+                    .setAction("REDOWNLOAD", new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            mBackgroundHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    downloadFile(fileData);
+                                }
+                            });
+                        }
+                    });
 
             snackbar.show();
             return;
@@ -297,12 +317,15 @@ public abstract class MainFragment extends Fragment {
                 if (file.isCompleted()) {
                     openFile(file);
                     incrementViewsByOne(file.getFileId());
-                } else {
-                    if (file.getDownloadjob() == null || !file.isInProcess()) {
-                        file.setDownloadjob(new DownloadJob(mMainActivity, mRenServiceClient,
-                                file, mFilesAdaptor));
-                    }
+                    return;
                 }
+
+                mBackgroundHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        downloadFile(file);
+                    }
+                });
             }
         });
 
@@ -318,6 +341,58 @@ public abstract class MainFragment extends Fragment {
                     mVisibleCount = visibleItemCount;
                     inflateArrayList(totalItemCount);
                 }
+            }
+        });
+    }
+
+    @WorkerThread
+    private void downloadFile(final FileData file) {
+        final String fileName = file.getFileId() + ".pdf";
+        if (file.isDownloadInProcess()) {
+            Log.i(TAG, "File download already in process. file name=" + fileName);
+            return;
+        }
+
+        file.setDownloadInProcess(true);
+        mFileDownloader.downloadFile(file.getUrl(), fileName,
+                new FileDownloader.DownloadFileCallback() {
+            @Override
+            public void onDownloadStart() {
+                Log.i(TAG, "File download started. file ID=" + file.getFileId());
+                file.setProgress(0);
+            }
+
+            @Override
+            public void onProgressUpdate(final int progress) {
+                Log.i(TAG, "File download progress received. file ID="
+                        + file.getFileId() + "; progress=" + progress);
+                file.setProgress(progress);
+            }
+
+            @Override
+            public void onDownloadComplete() {
+                Log.i(TAG, "Download complete. file ID=" + file.getFileId());
+                file.setProgress(100);
+                file.setIsCompleted(true);
+                file.setDownloadInProcess(false);
+                final DatabaseUtility dbUtil =
+                        DatabaseUtility.getInstance(mMainActivity.getApplicationContext());
+                if (!dbUtil.isFilePresent(file.getFileId())) {
+                    dbUtil.addFileData(file);
+                }
+                incrementViewsByOne(file.getFileId());
+                mFilesAdaptor.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onDownloadFail(final int error) {
+                Log.e(TAG, "File download failed. file ID="
+                        + file.getFileId() + "; error=" + error);
+                MainActivity.getmSnackbar().setText("File Download Error");
+                MainActivity.getmSnackbar().show();
+                file.setProgress(0);
+                file.setDownloadInProcess(false);
+                mFilesAdaptor.notifyDataSetChanged();
             }
         });
     }
@@ -346,20 +421,6 @@ public abstract class MainFragment extends Fragment {
             mNoContent.setVisibility(View.VISIBLE);
         } else {
             mNoContent.setVisibility(View.INVISIBLE);
-        }
-    }
-
-    public class SnackBarFileDownloadClickListener implements View.OnClickListener {
-        FileData filedata;
-
-        public SnackBarFileDownloadClickListener(FileData filedata) {
-            this.filedata = filedata;
-        }
-
-        @Override
-        public void onClick(View v) {
-            filedata.setDownloadjob(new DownloadJob(mMainActivity, mRenServiceClient,
-                    filedata, mFilesAdaptor));
         }
     }
 

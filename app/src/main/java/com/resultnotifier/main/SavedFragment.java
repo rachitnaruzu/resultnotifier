@@ -58,12 +58,13 @@ public class SavedFragment extends MainFragment {
         final DatabaseUtility dbUtil = getDatabaseUtility();
         final MyAdaptor listAdaptor = getListAdaptor();
         final ListView listView = getListView();
-        final SwipeRefreshLayout swipeRefreshLayout = getSwipeRefreshLayout();
         ArrayList<FileData> fileDataItems = dbUtil.getAllFiles(dbUtil.getFilerSavedCheck());
-            for(FileData fileData : fileDataItems){
-                listAdaptor.add_items(fileData);
-                fileData.setIsCompleted(true);
-            }
+        for(FileData fileData : fileDataItems){
+            listAdaptor.add_items(fileData);
+            fileData.setIsCompleted(true);
+        }
+
+        showLoading(false);
         listAdaptor.notifyDataSetChanged();
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -73,12 +74,6 @@ public class SavedFragment extends MainFragment {
                 incrementViewsByOne(mItem.getFileId());
             }
         });
-        showNoContent(listAdaptor.getCount() == 0);
-        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                swipeRefreshLayout.setRefreshing(false);
-            }
-        });
+        showNoContent(listAdaptor.isEmpty());
     }
 }
