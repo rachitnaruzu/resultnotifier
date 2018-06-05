@@ -1,4 +1,4 @@
-package com.resultnotifier.main;
+package com.resultnotifier.main.ui;
 
 import android.content.Context;
 import android.content.Intent;
@@ -14,15 +14,9 @@ import android.support.v4.app.Fragment;
 import android.support.v4.content.FileProvider;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Log;
-import android.view.ActionMode;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.webkit.MimeTypeMap;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
@@ -30,7 +24,14 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.resultnotifier.main.AppState;
+import com.resultnotifier.main.DatabaseUtility;
+import com.resultnotifier.main.FileData;
+import com.resultnotifier.main.MainActivity;
+import com.resultnotifier.main.MyAdaptor;
+import com.resultnotifier.main.R;
 import com.resultnotifier.main.downloader.FileDownloader;
+import com.resultnotifier.main.loader.DataLoader;
 import com.resultnotifier.main.service.RENServiceClient;
 
 import java.io.File;
@@ -40,75 +41,45 @@ import java.util.List;
 public abstract class MainFragment extends Fragment {
     private static final String TAG = "REN_MainFragment";
     private static final String BACKGROUND_THREAD_NAME = "file_downloader_thread";
-    private boolean mSelectFlag;
     private ListView mListView;
     private MainActivity mMainActivity;
     private MyAdaptor mFilesAdaptor;
     private DatabaseUtility mDatabaseUtility;
-    private String mDataType;
-    private String mGlobalFileId;
     private Snackbar mSnackBar;
     private ImageView mNoNetworkIcon;
     private TextView mNoNetworkText;
     private TextView mNoContent;
     private View mFragmentView;
     private SwipeRefreshLayout mSwipeRefreshLayout;
-    private SimpleMultiChoiceModeListener mMultiChoiceModeListener =
-            new SimpleMultiChoiceModeListener();
+    private MultiFileSelector mMultiFileSelector;
     private int mVisibleCount;
-    private ArrayList<FileData> mAllFileDataItems;
     private boolean mThatsIt;
     private RENServiceClient mRenServiceClient;
     private FileDownloader mFileDownloader;
     private Handler mBackgroundHandler;
+    private DataLoader mDataLoader;
 
 
     public MainFragment() {
     }
 
-    public MyAdaptor getListAdaptor() {
-        return mFilesAdaptor;
-    }
-
-    public DatabaseUtility getDatabaseUtility() {
-        return mDatabaseUtility;
-    }
-
-    public ListView getListView() {
-        return mListView;
-    }
-
-    public void setSelectedFlag(boolean isSelected) {
-        mSelectFlag = isSelected;
-    }
-
-    public abstract void fetchFiles(final RENServiceClient renServiceClient,
-                                    final int offset,
-                                    final String dataType,
-                                    final RENServiceClient.FetchFilesCallback filesResponse);
-
     public void inflateArrayList(int offset) {
-        fetchFiles(mRenServiceClient, offset, mDataType, new RENServiceClient.FetchFilesCallback() {
+        mDataLoader.fetchData(offset, mDatabaseUtility.getCheckedDataTypes(),
+                new DataLoader.DataLoaderCallback() {
             @Override
             public void onSuccess(final List<FileData> files) {
                 Log.i(TAG, "Received files. count=" + files.size());
                 mThatsIt = files.size() < mVisibleCount;
 
                 for (final FileData fileData : files) {
-                    fileData.setIsCompleted(mDatabaseUtility.isFilePresent(fileData.getFileId()));
-                    if (fileData.isCompleted()) {
-                        mDatabaseUtility.updateViews(fileData);
-                    }
                     mFilesAdaptor.add_items(fileData);
                 }
 
-                showLoading(false);
-                mFilesAdaptor.notifyDataSetChanged();
-                showNoContent(mFilesAdaptor.isEmpty());
+                showPopulatedFragmentState();
                 mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
                     @Override
                     public void onRefresh() {
-                        refreshFragment();
+                        refresh();
                     }
                 });
             }
@@ -116,17 +87,11 @@ public abstract class MainFragment extends Fragment {
             @Override
             public void onError(final int error) {
                 Log.i(TAG, "Unable to fetch files. error=" + error);
-                mFilesAdaptor.clear();
-                mFilesAdaptor.notifyDataSetChanged();
-                mSnackBar.setText("No Network");
-                mSnackBar.show();
-                showLoading(false);
-                showNoNetwork(true);
+                showNoNetworkFragmentState();
                 mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
                     @Override
                     public void onRefresh() {
-                        showNoNetwork(false);
-                        refreshFragment();
+                        refresh();
                     }
                 });
             }
@@ -138,22 +103,25 @@ public abstract class MainFragment extends Fragment {
         super.onCreate(savedInstanceState);
         mMainActivity = (MainActivity) getActivity();
 
-        mRenServiceClient = AppState.getRenServiceClient(mMainActivity.getApplicationContext());
+        final Context applicationContext = mMainActivity.getApplicationContext();
+        mRenServiceClient = AppState.getRenServiceClient(applicationContext);
         mFileDownloader = AppState.getFileDownloader();
+        mDataLoader = getDataLoader(applicationContext);
 
         final HandlerThread handlerThread = new HandlerThread(BACKGROUND_THREAD_NAME);
         handlerThread.start();
         mBackgroundHandler = new Handler(handlerThread.getLooper());
 
-        mDatabaseUtility = DatabaseUtility.getInstance(mMainActivity.getApplicationContext());
-        mDataType = mDatabaseUtility.getCheckedDataTypes();
-        mSelectFlag = false;
+        mDatabaseUtility = AppState.getDatabaseUtility(mMainActivity.getApplicationContext());
         mThatsIt = false;
         Log.i(TAG, "Oncreate");
     }
 
+    public abstract DataLoader getDataLoader(final Context context);
+
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(final LayoutInflater inflater, final ViewGroup container,
+                             final Bundle savedInstanceState) {
         Log.i(TAG, "Oncreateview");
         View vi = inflater.inflate(R.layout.result, container, false);
         mFragmentView = vi;
@@ -164,20 +132,33 @@ public abstract class MainFragment extends Fragment {
         mFilesAdaptor = new MyAdaptor(mMainActivity);
         mListView.setAdapter(mFilesAdaptor);
 
-        mNoContent = (TextView) vi.findViewById(R.id.no_content);
-        mNoNetworkIcon = (ImageView) vi.findViewById(R.id.no_network_icon);
-        mNoNetworkText = (TextView) vi.findViewById(R.id.no_network_text);
+        mMultiFileSelector = new MultiFileSelectorImpl(mMainActivity, mFilesAdaptor,
+                new MultiFileSelector.MultiFileSelectorCallback() {
+                    @Override
+                    public void deleteSelectedFiles() {
+                        MainFragment.this.deleteSelectedFiles();
+                    }
 
-        mSwipeRefreshLayout = (SwipeRefreshLayout) vi.findViewById(R.id.swiperefresh);
+                    @Override
+                    public void deSelect() {
+                        MainFragment.this.deSelect();
+                    }
+                });
+
+        mNoContent = vi.findViewById(R.id.no_content);
+        mNoNetworkIcon = vi.findViewById(R.id.no_network_icon);
+        mNoNetworkText = vi.findViewById(R.id.no_network_text);
+
+        mSwipeRefreshLayout = vi.findViewById(R.id.swiperefresh);
         showLoading(false);
         showNoNetwork(false);
         showNoContent(false);
         setMultiChoice(mListView);
         MainActivity.setmSnackbar(mSnackBar);
 
-        mAllFileDataItems = mDatabaseUtility.getAllFiles(false);
-        mRenServiceClient.updateSelfViews(mAllFileDataItems);
-        onCreateViewFinal();
+        mRenServiceClient.updateSelfViews(mDatabaseUtility.getAllFiles(false));
+        setFileClickListeners();
+        refresh();
 
         return vi;
     }
@@ -185,49 +166,94 @@ public abstract class MainFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mMultiChoiceModeListener.exitActionMode();
+        mMultiFileSelector.exitActionMode();
         mBackgroundHandler.getLooper().quitSafely();
         mBackgroundHandler = null;
     }
 
-    public void refreshFragment() {
-        mDataType = mDatabaseUtility.getCheckedDataTypes();
-        mSelectFlag = false;
-        mThatsIt = false;
-        mFilesAdaptor.clear();
-        mFilesAdaptor.notifyDataSetChanged();
-        refreshFragmentFinal();
+    public void refresh() {
+        Log.i(TAG, "Refreshing fragment");
+        clearFragmentState();
+        showLoadingFragmentState();
+        inflateArrayList(0);
     }
 
-    public abstract void refreshFragmentFinal();
+    private void clearFragmentState() {
+        Log.i(TAG, "Clearing fragment state");
+        mThatsIt = false;
+        mFilesAdaptor.clear();
+        showNoNetwork(false);
+        showLoading(false);
+        showNoContent(false);
+        mFilesAdaptor.notifyDataSetChanged();
+    }
 
-    public abstract void deleteSelectedItems();
+    public void showLoadingFragmentState() {
+        Log.i(TAG, "Showing loading fragment");
+        showNoNetwork(false);
+        showLoading(true);
+        showNoContent(false);
+        mFilesAdaptor.notifyDataSetChanged();
+    }
 
-    private void cancelSelect() {
-        ArrayList<FileData> mItems = mFilesAdaptor.getAdapterItems();
-        for (FileData fileData : mItems) {
+    public void showNoNetworkFragmentState() {
+        Log.i(TAG, "Showing no network fragment");
+        showLoading(false);
+        showNoContent(false);
+        mFilesAdaptor.clear();
+        mFilesAdaptor.notifyDataSetChanged();
+        showNoNetwork(true);
+        mSnackBar.setText("No Network");
+        mSnackBar.show();
+    }
+
+    public void showPopulatedFragmentState() {
+        Log.i(TAG, "Showing populated fragment");
+        showNoNetwork(false);
+        showLoading(false);
+        mFilesAdaptor.notifyDataSetChanged();
+        showNoContent(mFilesAdaptor.isEmpty());
+    }
+
+    public void deleteSelectedFiles() {
+        Log.i(TAG, "Deleting selected files");
+        final ArrayList<FileData> mItems = mFilesAdaptor.getAdapterItems();
+        for (final FileData fileData : mItems){
             if (fileData.isSelected()) {
-                fileData.setIsSelected(false);
+                mDatabaseUtility.deleteFile(fileData);
+                fileData.setIsCompleted(false);
             }
         }
-        mMultiChoiceModeListener.exitActionMode();
-        mFilesAdaptor.notifyDataSetChanged();
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                // Do something after 500ms
-                ArrayList<FileData> mItems = mFilesAdaptor.getAdapterItems();
-                for (FileData fileData : mItems) {
-                    fileData.setIsDisplaySelected(false);
-                }
+
+        showPopulatedFragmentState();
+    }
+
+    private void deSelect() {
+        Log.i(TAG, "Deselecting files");
+        final ArrayList<FileData> files = mFilesAdaptor.getAdapterItems();
+        for (final FileData file : files) {
+            if (file.isSelected()) {
+                file.setIsSelected(false);
             }
-        }, 500);
-        mSelectFlag = false;
+        }
+
+        mMultiFileSelector.exitActionMode();
+        showPopulatedFragmentState();
+//        mFilesAdaptor.notifyDataSetChanged();
+//        Handler handler = new Handler();
+//        handler.postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                ArrayList<FileData> mItems = mFilesAdaptor.getAdapterItems();
+//                for (final FileData fileData : mItems) {
+//                    fileData.setIsDisplaySelected(false);
+//                }
+//
+//            }
+//        }, 500);
     }
 
     public void incrementViewsByOne(final String fileId) {
-        mGlobalFileId = fileId;
         mRenServiceClient.incrementViewsByOne(fileId,
                 new RENServiceClient.IncrementViewsCallback() {
                     @Override
@@ -299,14 +325,10 @@ public abstract class MainFragment extends Fragment {
 
     public void setMultiChoice(ListView lv) {
         lv.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
-        lv.setMultiChoiceModeListener(mMultiChoiceModeListener);
+        lv.setMultiChoiceModeListener(mMultiFileSelector);
     }
 
-    public abstract void onCreateViewFinal();
-
-    public void handleNonSaved() {
-        inflateArrayList(0);
-
+    private void setFileClickListeners() {
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(final AdapterView<?> parent,
@@ -375,11 +397,10 @@ public abstract class MainFragment extends Fragment {
                 file.setProgress(100);
                 file.setIsCompleted(true);
                 file.setDownloadInProcess(false);
-                final DatabaseUtility dbUtil =
-                        DatabaseUtility.getInstance(mMainActivity.getApplicationContext());
-                if (!dbUtil.isFilePresent(file.getFileId())) {
-                    dbUtil.addFileData(file);
+                if (!mDatabaseUtility.isFilePresent(file.getFileId())) {
+                    mDatabaseUtility.addFileData(file);
                 }
+
                 incrementViewsByOne(file.getFileId());
                 mFilesAdaptor.notifyDataSetChanged();
             }
@@ -423,138 +444,4 @@ public abstract class MainFragment extends Fragment {
             mNoContent.setVisibility(View.INVISIBLE);
         }
     }
-
-    public class SimpleMultiChoiceModeListener implements AbsListView.MultiChoiceModeListener {
-
-        ActionMode global_mode;
-        //MenuItem global_item;
-        TextView feed_update_count;
-        ImageView menuItemDelete;
-        int completed_count;
-        int incompleted_count;
-
-        public void exitActionMode() {
-            if (global_mode != null) {
-                global_mode.finish();
-            }
-            completed_count = incompleted_count = 0;
-        }
-
-        @Override
-        public void onItemCheckedStateChanged(ActionMode mode, int position,
-                                              long id, boolean checked) {
-            FileData fileData = (FileData) mFilesAdaptor.getItem(position);
-            if (fileData.isCompleted()) {
-                completed_count += checked ? 1 : -1;
-            } else {
-                incompleted_count += checked ? 1 : -1;
-            }
-            fileData.setIsSelected(checked);
-            mFilesAdaptor.notifyDataSetChanged();
-            feed_update_count.setText(String.valueOf(completed_count + incompleted_count));
-            if (incompleted_count > 0) {
-                menuItemDelete.setVisibility(View.INVISIBLE);
-            } else {
-                menuItemDelete.setVisibility(View.VISIBLE);
-            }
-        }
-
-        private String getPresentsbleSelectedString() {
-            ArrayList<FileData> mItems = mFilesAdaptor.getAdapterItems();
-            String msg = "";
-            for (FileData fileData : mItems) {
-                if (fileData.isSelected()) {
-                    msg += fileData.getDisplayName() + "\n" + fileData.getUrl() + "\n\n";
-                }
-            }
-            return msg;
-        }
-
-        @Override
-        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-            // Inflate the menu for the CAB
-            completed_count = incompleted_count = 0;
-            MenuInflater inflater = mode.getMenuInflater();
-            inflater.inflate(R.menu.context_menu, menu);
-
-            LayoutInflater layoutInflater = (LayoutInflater) mMainActivity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            Animation translation = AnimationUtils.loadAnimation(mMainActivity, R.anim.enter_from_right);
-            this.global_mode = mode;
-
-            menuItemDelete = (ImageView) layoutInflater.inflate(R.layout.action_bar_item, null);
-            menuItemDelete.setImageResource(R.drawable.ic_delete_white_18pt_3x);
-            MenuItem deleteItem = menu.findItem(R.id.delete);
-            deleteItem.setActionView(menuItemDelete);
-
-            //this.global_item = item;
-            menuItemDelete.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    deleteSelectedItems();
-                    //global_mode.finish(); // Action picked, so close the CAB
-                    exitActionMode();
-                }
-            });
-
-            ImageView menuItemShare = (ImageView) layoutInflater.inflate(R.layout.action_bar_item, null);
-            menuItemShare.setImageResource(R.drawable.ic_share_white_18pt_3x);
-            MenuItem shareItem = menu.findItem(R.id.share);
-            shareItem.setActionView(menuItemShare);
-            //this.global_mode = mode;
-            //this.global_item = item;
-            menuItemShare.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent sendIntent = new Intent();
-                    sendIntent.setAction(Intent.ACTION_SEND);
-                    sendIntent.putExtra(Intent.EXTRA_TEXT, getPresentsbleSelectedString());
-                    sendIntent.setType("text/plain");
-                    startActivity(Intent.createChooser(sendIntent, "Share With"));
-                    //global_mode.finish(); // Action picked, so close the CAB
-                    exitActionMode();
-                }
-            });
-
-            feed_update_count = (TextView) layoutInflater.inflate(R.layout.feed_update_count, null);
-            feed_update_count.setText(String.valueOf(completed_count + incompleted_count));
-            MenuItem selectCountItem = menu.findItem(R.id.selectCount);
-            selectCountItem.setActionView(feed_update_count);
-
-            menuItemDelete.startAnimation(translation);
-            feed_update_count.startAnimation(translation);
-            menuItemShare.startAnimation(translation);
-
-            return true;
-        }
-
-        @Override
-        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-            // Here you can perform updates to the CAB due to
-            // an invalidate() request
-            return false;
-        }
-
-        @Override
-        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-            // Respond to clicks on the actions in the CAB
-            switch (item.getItemId()) {
-                case R.id.delete:
-                    deleteSelectedItems();
-                    global_mode = mode;
-                    exitActionMode();
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
-        @Override
-        public void onDestroyActionMode(ActionMode mode) {
-            // Here you can make any necessary updates to the activity when
-            // the CAB is removed. By default, selected items are deselected/unchecked.
-            cancelSelect();
-            exitActionMode();
-        }
-    }
-
 }

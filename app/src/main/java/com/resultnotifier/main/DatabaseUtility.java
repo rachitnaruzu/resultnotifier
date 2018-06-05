@@ -141,22 +141,14 @@ public class DatabaseUtility extends SQLiteOpenHelper {
                     + "FROM " + TABLE_SETTINGS + " "
                     + "WHERE " + VARIABLE + " = 'filter_saved';";
 
-    private static DatabaseUtility DBUTIL_INSTANCE = null;
-
     private final Context mContext;
 
-    public DatabaseUtility(Context context) {
+    public DatabaseUtility(final Context context) {
         super(context, NAME, null, VERSION);
         this.mContext = context;
     }
 
-    public static DatabaseUtility getInstance(Context context) {
-        if (DBUTIL_INSTANCE == null)
-            DBUTIL_INSTANCE = new DatabaseUtility(context);
-        return DBUTIL_INSTANCE;
-    }
-
-    public boolean getFilerSavedCheck() {
+    public boolean getFilterSavedCheck() {
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.rawQuery(GET_FILTER_SAVED_CMD, null);
         boolean result = false;

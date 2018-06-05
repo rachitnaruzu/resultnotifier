@@ -12,7 +12,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Base64;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -20,25 +19,15 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
-import com.android.volley.Request;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.VolleyLog;
 import com.resultnotifier.main.service.RENServiceClient;
-import com.resultnotifier.main.service.RENServiceClientImpl;
+import com.resultnotifier.main.ui.MainFragment;
+import com.resultnotifier.main.ui.PublishedFragment;
+import com.resultnotifier.main.ui.RecentFragment;
+import com.resultnotifier.main.ui.SavedFragment;
+import com.resultnotifier.main.ui.TopmostFragment;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -46,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "REN_MainActivity";
     private static int[] mColors;
     private static Snackbar mSnackbar;
-    private MainFragment mCurrent_Fragment;
+    private MainFragment mCurrentFragment;
     private DrawerLayout mDrawerLayout;
     private ListView mDrawerList;
     private ActionBarDrawerToggle mDrawerToggle;
@@ -111,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
             displayView(0);
         }
 
-        mDatabaseUtility = DatabaseUtility.getInstance(getApplicationContext());
+        mDatabaseUtility = AppState.getDatabaseUtility(getApplicationContext());
 
         getSupportActionBar().setHomeButtonEnabled(true);
         Log.i(TAG, "MainActivity created");
@@ -166,9 +155,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_OK) {
-            if (mCurrent_Fragment != null) {
+            if (mCurrentFragment != null) {
                 Log.e(TAG, "back to main activity");
-                mCurrent_Fragment.refreshFragment();
+                mCurrentFragment.refresh();
             }
         }
     }
@@ -222,28 +211,28 @@ public class MainActivity extends AppCompatActivity {
      * Displaying fragment view for selected nav drawer list item
      */
     private void displayView(int position) {
-        mCurrent_Fragment = null;
+        mCurrentFragment = null;
         switch (position) {
             case 0:
-                mCurrent_Fragment = new PublishedFragment();
+                mCurrentFragment = new PublishedFragment();
                 break;
             case 1:
-                mCurrent_Fragment = new TopmostFragment();
+                mCurrentFragment = new TopmostFragment();
                 break;
             case 2:
-                mCurrent_Fragment = new RecentFragment();
+                mCurrentFragment = new RecentFragment();
                 break;
             case 3:
-                mCurrent_Fragment = new SavedFragment();
+                mCurrentFragment = new SavedFragment();
                 break;
             default:
                 break;
         }
 
         Log.i(TAG, "Displaying Fragment. position=" + position);
-        if (mCurrent_Fragment != null) {
+        if (mCurrentFragment != null) {
             FragmentManager fragmentManager = getSupportFragmentManager();
-            fragmentManager.beginTransaction().replace(R.id.frame_container, mCurrent_Fragment).commit();
+            fragmentManager.beginTransaction().replace(R.id.frame_container, mCurrentFragment).commit();
             mDrawerList.setItemChecked(position, true);
             getSupportActionBar().setTitle(mNavMenuTitles[position]);
             mDrawerLayout.closeDrawer(mDrawerList);

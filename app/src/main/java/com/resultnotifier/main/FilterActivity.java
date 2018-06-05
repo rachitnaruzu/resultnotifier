@@ -16,6 +16,7 @@ public class FilterActivity extends AppCompatActivity {
     private ListView mFilterList;
     private FilterAdapter mFilterAdapter;
     private CheckBox mFilterSavedCheckbox;
+    private DatabaseUtility mDatabaseUtility;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,8 +26,9 @@ public class FilterActivity extends AppCompatActivity {
         setSupportActionBar(filter_toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        mDatabaseUtility = AppState.getDatabaseUtility(getApplicationContext());
         mFilterSavedCheckbox = (CheckBox) findViewById(R.id.filter_saved_checkBox);
-        mFilterSavedCheckbox.setChecked(DatabaseUtility.getInstance(getApplicationContext()).getFilerSavedCheck());
+        mFilterSavedCheckbox.setChecked(mDatabaseUtility.getFilterSavedCheck());
 
         mFilterList = (ListView) findViewById(R.id.filter_list);
         mFilterAdapter = new FilterAdapter(this);
@@ -50,7 +52,7 @@ public class FilterActivity extends AppCompatActivity {
         //noinspection SimplifiableIfStatement
         if (id == R.id.filter_action_save) {
             mFilterAdapter.updateDatabase();
-            DatabaseUtility.getInstance(getApplicationContext()).updateFilterSaved(mFilterSavedCheckbox.isChecked());
+            mDatabaseUtility.updateFilterSaved(mFilterSavedCheckbox.isChecked());
             Log.e("Save Pressed", "Save Pressed");
             Intent intent = new Intent();
             setResult(RESULT_OK, intent);

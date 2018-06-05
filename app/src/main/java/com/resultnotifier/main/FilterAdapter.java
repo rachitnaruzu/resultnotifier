@@ -22,7 +22,7 @@ public class FilterAdapter extends BaseAdapter {
     public FilterAdapter(final Activity mainActivity) {
         mMainActivity = mainActivity;
         mInflater = null;
-        mDbUtil = DatabaseUtility.getInstance(mMainActivity.getApplicationContext());
+        mDbUtil = AppState.getDatabaseUtility(mMainActivity.getApplicationContext());
         mFilterItems = mDbUtil.getAllFilterItems();
         notifyDataSetChanged();
     }
