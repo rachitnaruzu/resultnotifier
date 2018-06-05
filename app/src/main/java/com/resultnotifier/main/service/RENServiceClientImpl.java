@@ -66,9 +66,8 @@ public class RENServiceClientImpl implements RENServiceClient {
                         }
                     }, new Response.ErrorListener() {
                 @Override
-                public void onErrorResponse(VolleyError error) {
-                    VolleyLog.e("Update Error: ", error.getMessage());
-
+                public void onErrorResponse(final VolleyError error) {
+                    Log.e(TAG, "Unable to update views", error);
                 }
             });
 
@@ -98,8 +97,8 @@ public class RENServiceClientImpl implements RENServiceClient {
     }
 
     @Override
-    public void incrementViewsByOne(@NonNull final String fileId,
-                                    @Nullable final IncrementViewsCallback incrementViewsCallback) {
+    public void incrementViewsByOne(final String fileId,
+                                    final IncrementViewsCallback incrementViewsCallback) {
         Log.i(TAG, "Incrementing the views by one for file ID=" + fileId);
         final Map<String, String> params = CommonUtility.getSecureParams();
         params.put("fileid", fileId);
@@ -110,20 +109,14 @@ public class RENServiceClientImpl implements RENServiceClient {
                     public void onResponse(final JSONObject response) {
                         Log.i(TAG, "Successfully updated views by one. file ID=" + fileId
                                 + "; response=" + response);
+                        incrementViewsCallback.onSuccess();
 
-                        if (incrementViewsCallback != null) {
-                            incrementViewsCallback.onSuccess();
-                        }
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(final VolleyError error) {
-                final int statusCode = error.networkResponse.statusCode;
-                Log.i(TAG, "Unable to update views by one. error=" + statusCode);
-
-                if (incrementViewsCallback != null) {
-                    incrementViewsCallback.onError(statusCode);
-                }
+                Log.e(TAG, "Unable to update views by one", error);
+                incrementViewsCallback.onError(HTTP_INTERNAL_SERVER_ERROR);
             }
         });
 
@@ -156,9 +149,8 @@ public class RENServiceClientImpl implements RENServiceClient {
         final Response.ErrorListener errorResponseListener = new Response.ErrorListener() {
             @Override
             public void onErrorResponse(final VolleyError error) {
-                final int statusCode = error.networkResponse.statusCode;
-                Log.e(TAG, "Unable to fetch data types. error=" + statusCode);
-                fetchDataTypesCallback.onError(statusCode);
+                Log.e(TAG, "Unable to fetch data types.", error);
+                fetchDataTypesCallback.onError(HTTP_INTERNAL_SERVER_ERROR);
             }
         };
 
@@ -205,9 +197,8 @@ public class RENServiceClientImpl implements RENServiceClient {
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(final VolleyError error) {
-                final int statusCode = error.networkResponse.statusCode;
-                Log.i(TAG, "Unable to receive files response; error" + statusCode);
-                fetchFilesCallback.onError(statusCode);
+                Log.i(TAG, "Unable to receive files response", error);
+                fetchFilesCallback.onError(HTTP_INTERNAL_SERVER_ERROR);
             }
         });
 

@@ -18,8 +18,8 @@ public interface RENServiceClient {
     void fetchTopMostFiles(final int offset, final String dataType,
                            final FetchFilesCallback fetchFilesCallback);
 
-    void incrementViewsByOne(@NonNull final String fileId,
-                             @Nullable final IncrementViewsCallback incrementViewsCallback);
+    void incrementViewsByOne(final String fileId,
+                             final IncrementViewsCallback incrementViewsCallback);
 
     void fetchDataTypes(final FetchDataTypesCallback fetchDataTypesCallback);
 
