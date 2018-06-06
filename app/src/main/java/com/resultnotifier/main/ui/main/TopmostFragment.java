@@ -1,17 +1,17 @@
-package com.resultnotifier.main.ui;
+package com.resultnotifier.main.ui.main;
 
 import android.content.Context;
 
 import com.resultnotifier.main.AppState;
 import com.resultnotifier.main.loader.DataLoader;
 
-public class PublishedFragment extends MainFragment {
-    public PublishedFragment() {
+public class TopmostFragment extends MainFragment {
+    public TopmostFragment() {
     }
 
     @Override
     public DataLoader getDataLoader(final Context context) {
-        return AppState.getPublishedDataloader(context);
+        return AppState.getTopMostDataLoader(context);
     }
 
     @Override

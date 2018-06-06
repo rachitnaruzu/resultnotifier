@@ -8,9 +8,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
 import com.resultnotifier.main.CommonUtility;
-import com.resultnotifier.main.CustomRequest;
 import com.resultnotifier.main.FileData;
-import com.resultnotifier.main.MyHTTPHandler;
 
 import org.json.JSONArray;
 import org.json.JSONException;

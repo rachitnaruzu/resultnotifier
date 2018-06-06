@@ -1,4 +1,4 @@
-package com.resultnotifier.main;
+package com.resultnotifier.main.db;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -7,10 +7,14 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import com.resultnotifier.main.CommonUtility;
+import com.resultnotifier.main.FileData;
+import com.resultnotifier.main.ui.filter.FilterItem;
+
 import java.util.ArrayList;
 
-public class DatabaseUtility extends SQLiteOpenHelper {
-    private static final String TAG = "REN_DatabaseUtility";
+public class DatabaseManager extends SQLiteOpenHelper {
+    private static final String TAG = "REN_DatabaseManager";
 
     private static final String NAME = CommonUtility.APP_NAME;
     private static final int VERSION = 1;
@@ -143,7 +147,7 @@ public class DatabaseUtility extends SQLiteOpenHelper {
 
     private final Context mContext;
 
-    public DatabaseUtility(final Context context) {
+    public DatabaseManager(final Context context) {
         super(context, NAME, null, VERSION);
         this.mContext = context;
     }
@@ -210,8 +214,8 @@ public class DatabaseUtility extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         String is_checked = "0";
-        if (filterItem.is_checked) is_checked = "1";
-        values.put(DATA_TYPE, filterItem.datatype);
+        if (filterItem.isChecked()) is_checked = "1";
+        values.put(DATA_TYPE, filterItem.getDataType());
         values.put(IS_CHECKED, is_checked);
         db.insert(TABLE_DATA_TYPES, null, values);
         //db.close();
@@ -220,8 +224,8 @@ public class DatabaseUtility extends SQLiteOpenHelper {
     public void updateDatatypeCheck(FilterItem filterItem) {
         SQLiteDatabase db = this.getWritableDatabase();
         String is_checked = "0";
-        if (filterItem.is_checked) is_checked = "1";
-        db.execSQL(UPDATE_DATA_TYPE_CHECK_CMD, new String[]{is_checked, filterItem.datatype});
+        if (filterItem.isChecked()) is_checked = "1";
+        db.execSQL(UPDATE_DATA_TYPE_CHECK_CMD, new String[]{is_checked, filterItem.getDataType()});
     }
 
     public ArrayList<FilterItem> getAllFilterItems() {
@@ -230,9 +234,10 @@ public class DatabaseUtility extends SQLiteOpenHelper {
         Cursor cursor = db.rawQuery(GET_ALL_FILTER_ITEMS_CMD, null);
         if (cursor.moveToFirst()) {
             do {
-                FilterItem filterItem = new FilterItem();
-                filterItem.datatype = cursor.getString(cursor.getColumnIndex(DATA_TYPE));
-                filterItem.is_checked = cursor.getInt(cursor.getColumnIndex(IS_CHECKED)) == CHECKED;
+                final String dataType = cursor.getString(cursor.getColumnIndex(DATA_TYPE));
+                final boolean isChecked =
+                        cursor.getInt(cursor.getColumnIndex(IS_CHECKED)) == CHECKED;
+                final FilterItem filterItem = new FilterItem(dataType, isChecked);
                 filterItems.add(filterItem);
             } while (cursor.moveToNext());
         }

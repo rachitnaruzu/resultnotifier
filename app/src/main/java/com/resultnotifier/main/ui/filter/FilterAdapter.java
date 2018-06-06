@@ -1,4 +1,4 @@
-package com.resultnotifier.main;
+package com.resultnotifier.main.ui.filter;
 
 import android.app.Activity;
 import android.content.Context;
@@ -10,19 +10,24 @@ import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
+import com.resultnotifier.main.AppState;
+import com.resultnotifier.main.db.DatabaseManager;
+import com.resultnotifier.main.R;
+
 import java.util.ArrayList;
 
 public class FilterAdapter extends BaseAdapter {
+    private static final String TAG = "REN_FilterAdaptor";
 
     private final Activity mMainActivity;
     private final ArrayList<FilterItem> mFilterItems;
-    private final DatabaseUtility mDbUtil;
+    private final DatabaseManager mDbUtil;
     private LayoutInflater mInflater;
 
     public FilterAdapter(final Activity mainActivity) {
         mMainActivity = mainActivity;
         mInflater = null;
-        mDbUtil = AppState.getDatabaseUtility(mMainActivity.getApplicationContext());
+        mDbUtil = AppState.getDatabaseManager(mMainActivity.getApplicationContext());
         mFilterItems = mDbUtil.getAllFilterItems();
         notifyDataSetChanged();
     }
@@ -64,15 +69,12 @@ public class FilterAdapter extends BaseAdapter {
 
             @Override
             public void onClick(View arg0) {
-                //final boolean isChecked = mCheckBox.isChecked();
-                filterItem.is_checked = !filterItem.is_checked;
-                for (FilterItem filterItem : mFilterItems) {
-                    Log.e(filterItem.datatype, filterItem.is_checked + "");
-                }
+                filterItem.setIsChecked(!filterItem.isChecked());
             }
         });
-        dataTypeView.setText(filterItem.datatype);
-        checkBox.setChecked(filterItem.is_checked);
+
+        dataTypeView.setText(filterItem.getDataType());
+        checkBox.setChecked(filterItem.isChecked());
         return vi;
     }
 }

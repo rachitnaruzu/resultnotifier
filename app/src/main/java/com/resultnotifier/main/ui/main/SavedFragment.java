@@ -1,21 +1,21 @@
-package com.resultnotifier.main.ui;
+package com.resultnotifier.main.ui.main;
 
 import android.content.Context;
 
 import com.resultnotifier.main.AppState;
 import com.resultnotifier.main.loader.DataLoader;
 
-public class TopmostFragment extends MainFragment {
-    public TopmostFragment() {
+public class SavedFragment extends MainFragment {
+    public SavedFragment() {
     }
 
     @Override
     public DataLoader getDataLoader(final Context context) {
-        return AppState.getTopMostDataloader(context);
+        return AppState.getSavedDataLoader(context);
     }
 
     @Override
     public boolean shouldHonourOffset() {
-        return true;
+        return false;
     }
 }

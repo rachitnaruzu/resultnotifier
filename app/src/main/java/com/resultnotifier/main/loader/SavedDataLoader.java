@@ -1,15 +1,15 @@
 package com.resultnotifier.main.loader;
 
-import com.resultnotifier.main.DatabaseUtility;
+import com.resultnotifier.main.db.DatabaseManager;
 import com.resultnotifier.main.FileData;
 
 import java.util.ArrayList;
 
 public class SavedDataLoader implements DataLoader {
-    private final DatabaseUtility mDatabaseUtility;
+    private final DatabaseManager mDatabaseManager;
 
-    public SavedDataLoader(final DatabaseUtility databaseUtility) {
-        mDatabaseUtility = databaseUtility;
+    public SavedDataLoader(final DatabaseManager databaseManager) {
+        mDatabaseManager = databaseManager;
     }
 
     @Override
@@ -17,7 +17,7 @@ public class SavedDataLoader implements DataLoader {
                           final String dataTypes,
                           final DataLoaderCallback dataLoaderCallback) {
         final ArrayList<FileData> files =
-                mDatabaseUtility.getAllFiles(mDatabaseUtility.getFilterSavedCheck());
+                mDatabaseManager.getAllFiles(mDatabaseManager.getFilterSavedCheck());
         for(final FileData file : files){
             file.setIsCompleted(true);
         }

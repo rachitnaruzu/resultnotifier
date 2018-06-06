@@ -1,4 +1,4 @@
-package com.resultnotifier.main;
+package com.resultnotifier.main.service;
 
 import com.android.volley.NetworkResponse;
 import com.android.volley.ParseError;
@@ -14,12 +14,12 @@ import org.json.JSONObject;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
-public class CustomRequest extends Request<JSONObject> {
+class CustomRequest extends Request<JSONObject> {
 
     private final Listener<JSONObject> mListener;
     private final Map<String, String> mParams;
 
-    public CustomRequest(int method, String url, Map<String, String> mParams,
+    CustomRequest(int method, String url, Map<String, String> mParams,
                          Listener<JSONObject> responseListener, ErrorListener errorListener) {
         super(method, url, errorListener);
         this.mListener = responseListener;

@@ -1,4 +1,4 @@
-package com.resultnotifier.main.ui;
+package com.resultnotifier.main.ui.main;
 
 import android.content.Context;
 
@@ -11,7 +11,7 @@ public class RecentFragment extends MainFragment {
 
     @Override
     public DataLoader getDataLoader(final Context context) {
-        return AppState.getRecentDataloader(context);
+        return AppState.getRecentDataLoader(context);
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.resultnotifier.main.ui;
+package com.resultnotifier.main.ui.main.selector;
 
 import android.content.Context;
 import android.content.Intent;
@@ -14,8 +14,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.resultnotifier.main.FileData;
-import com.resultnotifier.main.MyAdaptor;
 import com.resultnotifier.main.R;
+import com.resultnotifier.main.ui.main.MyAdaptor;
 
 import java.util.ArrayList;
 
@@ -32,7 +32,7 @@ public class MultiFileSelectorImpl implements MultiFileSelector {
     private int mIncompleteCount;
 
     public MultiFileSelectorImpl(final Context context, final MyAdaptor filesAdaptor,
-                                 final MultiFileSelectorCallback multiFileSelectorCallback) {
+                          final MultiFileSelectorCallback multiFileSelectorCallback) {
         mContext = context;
         mFilesAdaptor = filesAdaptor;
         mMultiFileSelectorCallback = multiFileSelectorCallback;

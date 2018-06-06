@@ -1,4 +1,4 @@
-package com.resultnotifier.main.ui;
+package com.resultnotifier.main.ui.main;
 
 import android.content.Context;
 import android.content.Intent;
@@ -25,14 +25,14 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.resultnotifier.main.AppState;
-import com.resultnotifier.main.DatabaseUtility;
+import com.resultnotifier.main.db.DatabaseManager;
 import com.resultnotifier.main.FileData;
-import com.resultnotifier.main.MainActivity;
-import com.resultnotifier.main.MyAdaptor;
 import com.resultnotifier.main.R;
 import com.resultnotifier.main.downloader.FileDownloader;
 import com.resultnotifier.main.loader.DataLoader;
 import com.resultnotifier.main.service.RENServiceClient;
+import com.resultnotifier.main.ui.main.selector.MultiFileSelector;
+import com.resultnotifier.main.ui.main.selector.MultiFileSelectorImpl;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -44,7 +44,7 @@ public abstract class MainFragment extends Fragment {
     private ListView mListView;
     private MainActivity mMainActivity;
     private MyAdaptor mFilesAdaptor;
-    private DatabaseUtility mDatabaseUtility;
+    private DatabaseManager mDatabaseManager;
     private Snackbar mSnackBar;
     private ImageView mNoNetworkIcon;
     private TextView mNoNetworkText;
@@ -66,7 +66,7 @@ public abstract class MainFragment extends Fragment {
     public void inflateArrayList(final Integer offset) {
         Log.i(TAG, "Fetching files with offset=" + offset);
         mIsFetchingInProgress = true;
-        mDataLoader.fetchData(offset, mDatabaseUtility.getCheckedDataTypes(),
+        mDataLoader.fetchData(offset, mDatabaseManager.getCheckedDataTypes(),
                 new DataLoader.DataLoaderCallback() {
             @Override
             public void onSuccess(final List<FileData> files) {
@@ -130,7 +130,7 @@ public abstract class MainFragment extends Fragment {
         handlerThread.start();
         mBackgroundHandler = new Handler(handlerThread.getLooper());
 
-        mDatabaseUtility = AppState.getDatabaseUtility(mMainActivity.getApplicationContext());
+        mDatabaseManager = AppState.getDatabaseManager(mMainActivity.getApplicationContext());
         Log.i(TAG, "Oncreate");
     }
 
@@ -175,7 +175,7 @@ public abstract class MainFragment extends Fragment {
         setMultiChoice(mListView);
         MainActivity.setmSnackbar(mSnackBar);
 
-        mRenServiceClient.updateSelfViews(mDatabaseUtility.getAllFiles(false));
+        mRenServiceClient.updateSelfViews(mDatabaseManager.getAllFiles(false));
         setFileClickListeners();
         refresh();
 
@@ -241,7 +241,7 @@ public abstract class MainFragment extends Fragment {
         final ArrayList<FileData> mItems = mFilesAdaptor.getAdapterItems();
         for (final FileData fileData : mItems){
             if (fileData.isSelected()) {
-                mDatabaseUtility.deleteFile(fileData);
+                mDatabaseManager.deleteFile(fileData);
                 fileData.setIsCompleted(false);
             }
         }
@@ -284,7 +284,7 @@ public abstract class MainFragment extends Fragment {
 
                     @Override
                     public void onError(final int error) {
-                        mDatabaseUtility.incrementSelfViewsByOne(fileId);
+                        mDatabaseManager.incrementSelfViewsByOne(fileId);
                     }
                 });
     }
@@ -422,8 +422,8 @@ public abstract class MainFragment extends Fragment {
                 file.setProgress(100);
                 file.setIsCompleted(true);
                 file.setDownloadInProcess(false);
-                if (!mDatabaseUtility.isFilePresent(file.getFileId())) {
-                    mDatabaseUtility.addFileData(file);
+                if (!mDatabaseManager.isFilePresent(file.getFileId())) {
+                    mDatabaseManager.addFileData(file);
                 }
 
                 incrementViewsByOne(file.getFileId());

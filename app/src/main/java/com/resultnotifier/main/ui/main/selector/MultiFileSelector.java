@@ -1,4 +1,4 @@
-package com.resultnotifier.main.ui;
+package com.resultnotifier.main.ui.main.selector;
 
 import android.widget.AbsListView;
 

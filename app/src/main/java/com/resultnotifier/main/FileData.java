@@ -3,7 +3,7 @@ package com.resultnotifier.main;
 import android.view.View;
 import android.widget.ProgressBar;
 
-import java.io.File;
+import com.resultnotifier.main.ui.main.MainActivity;
 
 public class FileData {
     private String mDisplayName;
@@ -71,10 +71,6 @@ public class FileData {
 
     public boolean isDownloadInProcess() {
         return mIsDownloadInProcess;
-    }
-
-    public ProgressBar getProgressBar() {
-        return mProgressBar;
     }
 
     public void setDisplayName(final String displayName) {

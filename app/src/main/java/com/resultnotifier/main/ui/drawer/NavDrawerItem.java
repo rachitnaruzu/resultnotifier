@@ -1,4 +1,4 @@
-package com.resultnotifier.main;
+package com.resultnotifier.main.ui.drawer;
 
 public class NavDrawerItem {
     private String mTitle;

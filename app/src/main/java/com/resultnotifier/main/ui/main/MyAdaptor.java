@@ -1,4 +1,4 @@
-package com.resultnotifier.main;
+package com.resultnotifier.main.ui.main;
 
 import android.animation.Animator;
 import android.animation.AnimatorInflater;
@@ -17,6 +17,9 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.resultnotifier.main.FileData;
+import com.resultnotifier.main.R;
+
 import java.text.DateFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -31,18 +34,18 @@ public class MyAdaptor extends BaseAdapter {
     private final Activity mainActivity;
     private LayoutInflater mInflater;
 
-    public MyAdaptor(Activity mainActivity) {
+    MyAdaptor(Activity mainActivity) {
         //this.context = context;
         this.mItems = new ArrayList<>();
         this.mainActivity = mainActivity;
         //(LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     }
 
-    public void clear() {
+    void clear() {
         mItems.clear();
     }
 
-    public void add_items(FileData item) {
+    void add_items(FileData item) {
         mItems.add(item);
     }
 
@@ -127,7 +130,7 @@ public class MyAdaptor extends BaseAdapter {
         return vi;
     }
 
-    String getMonthForInt(int num) {
+    private String getMonthForInt(int num) {
         String month = "wrong";
         DateFormatSymbols dfs = new DateFormatSymbols();
         String[] months = dfs.getMonths();
@@ -247,6 +250,4 @@ public class MyAdaptor extends BaseAdapter {
 
         }
     }
-
-
 }

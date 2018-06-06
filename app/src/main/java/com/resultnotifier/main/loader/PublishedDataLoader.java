@@ -1,16 +1,16 @@
 package com.resultnotifier.main.loader;
 
-import com.resultnotifier.main.DatabaseUtility;
+import com.resultnotifier.main.db.DatabaseManager;
 import com.resultnotifier.main.service.RENServiceClient;
 
 public class PublishedDataLoader extends ServiceDataLoader {
     private final RENServiceClient mRenServiceClient;
-    private final DatabaseUtility mDatabaseUtility;
+    private final DatabaseManager mDatabaseManager;
 
     public PublishedDataLoader(final RENServiceClient renServiceClient,
-                               final DatabaseUtility databaseUtility) {
+                               final DatabaseManager databaseManager) {
         mRenServiceClient = renServiceClient;
-        mDatabaseUtility = databaseUtility;
+        mDatabaseManager = databaseManager;
     }
 
     @Override
@@ -18,6 +18,6 @@ public class PublishedDataLoader extends ServiceDataLoader {
                           final String dataTypes,
                           final DataLoaderCallback dataLoaderCallback) {
         mRenServiceClient.fetchPublishedFiles(offset, dataTypes,
-                getFetchFilesCallback(dataLoaderCallback, mDatabaseUtility));
+                getFetchFilesCallback(dataLoaderCallback, mDatabaseManager));
     }
 }

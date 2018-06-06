@@ -1,4 +1,4 @@
-package com.resultnotifier.main;
+package com.resultnotifier.main.ui.main;
 
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -19,12 +19,14 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
+import com.resultnotifier.main.AppState;
+import com.resultnotifier.main.db.DatabaseManager;
+import com.resultnotifier.main.ui.drawer.NavDrawerItem;
+import com.resultnotifier.main.ui.drawer.NavDrawerListAdapter;
+import com.resultnotifier.main.R;
 import com.resultnotifier.main.service.RENServiceClient;
-import com.resultnotifier.main.ui.MainFragment;
-import com.resultnotifier.main.ui.PublishedFragment;
-import com.resultnotifier.main.ui.RecentFragment;
-import com.resultnotifier.main.ui.SavedFragment;
-import com.resultnotifier.main.ui.TopmostFragment;
+import com.resultnotifier.main.ui.filter.FilterActivity;
+import com.resultnotifier.main.ui.filter.FilterItem;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
     private String[] mNavMenuTitles;
     private NavDrawerListAdapter mAdapter;
     private Toolbar mToolbar;
-    private DatabaseUtility mDatabaseUtility;
+    private DatabaseManager mDatabaseManager;
     private RENServiceClient mRenServiceClient;
 
     public static Snackbar getmSnackbar() {
@@ -100,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
             displayView(0);
         }
 
-        mDatabaseUtility = AppState.getDatabaseUtility(getApplicationContext());
+        mDatabaseManager = AppState.getDatabaseManager(getApplicationContext());
 
         getSupportActionBar().setHomeButtonEnabled(true);
         Log.i(TAG, "MainActivity created");
@@ -198,11 +200,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void saveDataTypes(final List<String> dataTypes) {
         for (final String dataType : dataTypes) {
-            FilterItem filterItem = new FilterItem();
-            filterItem.datatype = dataType;
-            filterItem.is_checked = true;
-            if (!mDatabaseUtility.isDataTypeAvailable(filterItem.datatype)) {
-                mDatabaseUtility.addDataType(filterItem);
+            final FilterItem filterItem = new FilterItem(dataType, true);
+            if (!mDatabaseManager.isDataTypeAvailable(dataType)) {
+                mDatabaseManager.addDataType(filterItem);
             }
         }
     }

@@ -1,4 +1,4 @@
-package com.resultnotifier.main;
+package com.resultnotifier.main.service;
 
 import android.content.Context;
 
