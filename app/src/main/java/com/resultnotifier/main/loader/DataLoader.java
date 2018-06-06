@@ -5,7 +5,7 @@ import com.resultnotifier.main.FileData;
 import java.util.List;
 
 public interface DataLoader {
-    void fetchData(final int offset, final String dataTypes,
+    void fetchData(final Integer offset, final String dataTypes,
                    final DataLoaderCallback dataLoaderCallback);
 
     interface DataLoaderCallback {

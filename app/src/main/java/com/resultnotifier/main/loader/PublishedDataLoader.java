@@ -14,7 +14,7 @@ public class PublishedDataLoader extends ServiceDataLoader {
     }
 
     @Override
-    public void fetchData(final int offset,
+    public void fetchData(final Integer offset,
                           final String dataTypes,
                           final DataLoaderCallback dataLoaderCallback) {
         mRenServiceClient.fetchPublishedFiles(offset, dataTypes,

@@ -52,30 +52,39 @@ public abstract class MainFragment extends Fragment {
     private View mFragmentView;
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private MultiFileSelector mMultiFileSelector;
-    private int mVisibleCount;
-    private boolean mThatsIt;
+    private int mLastOffsetReceived;
+    private boolean mIsFetchingInProgress;
     private RENServiceClient mRenServiceClient;
     private FileDownloader mFileDownloader;
     private Handler mBackgroundHandler;
     private DataLoader mDataLoader;
-
+    private Handler mMainHandler;
 
     public MainFragment() {
     }
 
-    public void inflateArrayList(int offset) {
+    public void inflateArrayList(final Integer offset) {
+        Log.i(TAG, "Fetching files with offset=" + offset);
+        mIsFetchingInProgress = true;
         mDataLoader.fetchData(offset, mDatabaseUtility.getCheckedDataTypes(),
                 new DataLoader.DataLoaderCallback() {
             @Override
             public void onSuccess(final List<FileData> files) {
                 Log.i(TAG, "Received files. count=" + files.size());
-                mThatsIt = files.size() < mVisibleCount;
+                mLastOffsetReceived = files.size();
 
                 for (final FileData fileData : files) {
                     mFilesAdaptor.add_items(fileData);
                 }
 
-                showPopulatedFragmentState();
+                mMainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mIsFetchingInProgress = false;
+                        showPopulatedFragmentState();
+                    }
+                });
+
                 mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
                     @Override
                     public void onRefresh() {
@@ -87,7 +96,15 @@ public abstract class MainFragment extends Fragment {
             @Override
             public void onError(final int error) {
                 Log.i(TAG, "Unable to fetch files. error=" + error);
-                showNoNetworkFragmentState();
+
+                mMainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mIsFetchingInProgress = false;
+                        showNoNetworkFragmentState();
+                    }
+                });
+
                 mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
                     @Override
                     public void onRefresh() {
@@ -102,6 +119,7 @@ public abstract class MainFragment extends Fragment {
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mMainActivity = (MainActivity) getActivity();
+        mMainHandler = new Handler(mMainActivity.getMainLooper());
 
         final Context applicationContext = mMainActivity.getApplicationContext();
         mRenServiceClient = AppState.getRenServiceClient(applicationContext);
@@ -113,11 +131,12 @@ public abstract class MainFragment extends Fragment {
         mBackgroundHandler = new Handler(handlerThread.getLooper());
 
         mDatabaseUtility = AppState.getDatabaseUtility(mMainActivity.getApplicationContext());
-        mThatsIt = false;
         Log.i(TAG, "Oncreate");
     }
 
     public abstract DataLoader getDataLoader(final Context context);
+
+    public abstract boolean shouldHonourOffset();
 
     @Override
     public View onCreateView(final LayoutInflater inflater, final ViewGroup container,
@@ -169,18 +188,20 @@ public abstract class MainFragment extends Fragment {
         mMultiFileSelector.exitActionMode();
         mBackgroundHandler.getLooper().quitSafely();
         mBackgroundHandler = null;
+        mMainHandler = null;
     }
 
     public void refresh() {
         Log.i(TAG, "Refreshing fragment");
         clearFragmentState();
         showLoadingFragmentState();
-        inflateArrayList(0);
+        inflateArrayList(shouldHonourOffset() ? 0 : null);
     }
 
     private void clearFragmentState() {
         Log.i(TAG, "Clearing fragment state");
-        mThatsIt = false;
+        mLastOffsetReceived = 0;
+        mIsFetchingInProgress = false;
         mFilesAdaptor.clear();
         showNoNetwork(false);
         showLoading(false);
@@ -358,9 +379,13 @@ public abstract class MainFragment extends Fragment {
             }
 
             @Override
-            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-                if (!mThatsIt && firstVisibleItem + visibleItemCount == totalItemCount && totalItemCount != 0) {
-                    mVisibleCount = visibleItemCount;
+            public void onScroll(final AbsListView view,
+                                 final int firstVisibleItem,
+                                 final int visibleItemCount,
+                                 final int totalItemCount) {
+                if (shouldHonourOffset() && !mIsFetchingInProgress && totalItemCount > 0
+                        && mLastOffsetReceived > visibleItemCount
+                        && firstVisibleItem + visibleItemCount == totalItemCount) {
                     inflateArrayList(totalItemCount);
                 }
             }

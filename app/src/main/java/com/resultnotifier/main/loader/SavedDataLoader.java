@@ -13,7 +13,7 @@ public class SavedDataLoader implements DataLoader {
     }
 
     @Override
-    public void fetchData(final int offset,
+    public void fetchData(final Integer offset,
                           final String dataTypes,
                           final DataLoaderCallback dataLoaderCallback) {
         final ArrayList<FileData> files =

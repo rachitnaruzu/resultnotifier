@@ -14,7 +14,7 @@ public class RecentDataLoader extends ServiceDataLoader {
     }
 
     @Override
-    public void fetchData(final int offset,
+    public void fetchData(final Integer offset,
                           final String dataTypes,
                           final DataLoaderCallback dataLoaderCallback) {
         mRenServiceClient.fetchRecentFiles(offset, dataTypes,

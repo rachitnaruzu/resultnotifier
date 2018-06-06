@@ -4,7 +4,6 @@ import android.content.Context;
 
 import com.resultnotifier.main.AppState;
 import com.resultnotifier.main.loader.DataLoader;
-import com.resultnotifier.main.ui.MainFragment;
 
 public class PublishedFragment extends MainFragment {
     public PublishedFragment() {
@@ -13,5 +12,10 @@ public class PublishedFragment extends MainFragment {
     @Override
     public DataLoader getDataLoader(final Context context) {
         return AppState.getPublishedDataloader(context);
+    }
+
+    @Override
+    public boolean shouldHonourOffset() {
+        return true;
     }
 }
