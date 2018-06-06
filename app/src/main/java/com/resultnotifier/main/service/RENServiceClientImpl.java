@@ -1,7 +1,6 @@
 package com.resultnotifier.main.service;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import android.util.Base64;
 import android.util.Log;
 
 import com.android.volley.Request;
@@ -17,23 +16,30 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 import static com.resultnotifier.main.CommonUtility.DOMAIN;
 
 public class RENServiceClientImpl implements RENServiceClient {
+    public static final int HTTP_INTERNAL_SERVER_ERROR = 500;
     private static final String TAG = "REN_RENServiceClientIm";
-
-    public static final String PUBLISHED_URL = DOMAIN + "/published/";
-    public static final String TOPMOST_URL = DOMAIN + "/topmost/";
-    public static final String FETCH_VIEWS_URL = DOMAIN + "/updateselfviews/";
-    public static final String INCREMENT_VIEW_URL = DOMAIN + "/incrementviews/";
-    public static final String FETCH_DATA_TYPES = DOMAIN + "/datatypes/";
-    public static final String RECENT_URL = DOMAIN + "/recent/";
-    private static final int HTTP_INTERNAL_SERVER_ERROR = 500;
-
+    private static final String PUBLISHED_URL = DOMAIN + "/published/";
+    private static final String TOPMOST_URL = DOMAIN + "/topmost/";
+    private static final String FETCH_VIEWS_URL = DOMAIN + "/updateselfviews/";
+    private static final String INCREMENT_VIEW_URL = DOMAIN + "/incrementviews/";
+    private static final String FETCH_DATA_TYPES = DOMAIN + "/datatypes/";
+    private static final String RECENT_URL = DOMAIN + "/recent/";
+    private static final char[] HEX_ARRAY = "0123456789abcdef".toCharArray();
     private MyHTTPHandler mMyHttpHandler;
 
     public RENServiceClientImpl(final MyHTTPHandler myHTTPHandler) {
@@ -45,7 +51,7 @@ public class RENServiceClientImpl implements RENServiceClient {
         Log.i(TAG, "Updating self views");
 
         final String selfViews = getJSONSelfViews(fileDataItems);
-        final Map<String, String> params = CommonUtility.getSecureParams();
+        final Map<String, String> params = getSecureParams();
         params.put("selfviews", selfViews);
         if (selfViews.equals("{}")) {
             Log.i(TAG, "Not updating views as there are no self views");
@@ -100,7 +106,7 @@ public class RENServiceClientImpl implements RENServiceClient {
     public void incrementViewsByOne(final String fileId,
                                     final IncrementViewsCallback incrementViewsCallback) {
         Log.i(TAG, "Incrementing the views by one for file ID=" + fileId);
-        final Map<String, String> params = CommonUtility.getSecureParams();
+        final Map<String, String> params = getSecureParams();
         params.put("fileid", fileId);
         final CustomRequest updateSelfViewsRequest = new CustomRequest(Request.Method.POST,
                 INCREMENT_VIEW_URL, params,
@@ -154,7 +160,7 @@ public class RENServiceClientImpl implements RENServiceClient {
             }
         };
 
-        final Map<String, String> params = CommonUtility.getSecureParams();
+        final Map<String, String> params = getSecureParams();
         final CustomRequest fetchRequest = new CustomRequest(Request.Method.POST,
                 FETCH_DATA_TYPES, params, successResponseListener,
                 errorResponseListener);
@@ -164,7 +170,7 @@ public class RENServiceClientImpl implements RENServiceClient {
 
     private void fetchFiles(final int offset, final String dataType, final String url,
                             final FetchFilesCallback fetchFilesCallback) {
-        final Map<String, String> params = CommonUtility.getSecureParams();
+        final Map<String, String> params = getSecureParams();
         params.put("offset", String.valueOf(offset));
         params.put("datatypes", dataType);
         final CustomRequest fetchRequest = new CustomRequest(Request.Method.POST, url, params,
@@ -219,5 +225,49 @@ public class RENServiceClientImpl implements RENServiceClient {
         String selfViews = "[]";
         if (is_any_one_self_view) selfViews = selfViewsB.toString();
         return selfViews;
+    }
+
+    private Map<String, String> getSecureParams() {
+        Map<String, String> params = new HashMap<>();
+        return addSecureParams(params);
+    }
+
+    private Map<String, String> addSecureParams(Map<String, String> params) {
+        String ts = getEncodedTimestamp();
+        params.put("sec", ts);
+        params.put("sig", encodeStringData(CommonUtility.SECRET_KEY, ts));
+        return params;
+    }
+
+    private String encodeStringData(String key, String value) {
+        try {
+            byte[] keyBytes = key.getBytes();
+            SecretKeySpec signingKey = new SecretKeySpec(keyBytes, "HmacSHA256");
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(signingKey);
+            byte[] rawHmac = mac.doFinal(value.getBytes());
+            return bytesToHex(rawHmac);
+        } catch (Exception e) {
+            Log.e("MainFragment", e.getMessage());
+        }
+        return null;
+    }
+
+    private String bytesToHex(byte[] bytes) {
+        char[] hexChars = new char[bytes.length * 2];
+        for (int j = 0; j < bytes.length; j++) {
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = HEX_ARRAY[v >>> 4];
+            hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
+        }
+        return new String(hexChars);
+    }
+
+    private String getEncodedTimestamp() {
+        Calendar currentTime = Calendar.getInstance();
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        String ts = dateFormat.format(currentTime.getTime());
+        return Base64.encodeToString(ts.getBytes(), Base64.URL_SAFE);
     }
 }
