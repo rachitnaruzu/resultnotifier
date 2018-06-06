@@ -18,4 +18,9 @@ public class SavedFragment extends MainFragment {
     public boolean shouldHonourOffset() {
         return false;
     }
+
+    @Override
+    public boolean shouldDisplayNonSavedFiles() {
+        return false;
+    }
 }

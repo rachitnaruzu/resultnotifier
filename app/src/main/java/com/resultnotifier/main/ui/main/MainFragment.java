@@ -161,6 +161,7 @@ public abstract class MainFragment extends Fragment {
                     @Override
                     public void deSelect() {
                         MainFragment.this.deSelect();
+                        showPopulatedFragmentState();
                     }
                 });
 
@@ -236,17 +237,40 @@ public abstract class MainFragment extends Fragment {
         showNoContent(mFilesAdaptor.isEmpty());
     }
 
+    public abstract boolean shouldDisplayNonSavedFiles();
+
     public void deleteSelectedFiles() {
         Log.i(TAG, "Deleting selected files");
-        final ArrayList<FileData> mItems = mFilesAdaptor.getAdapterItems();
-        for (final FileData fileData : mItems){
+        final ArrayList<FileData> files = new ArrayList<>(mFilesAdaptor.getAdapterItems());
+        for (final FileData fileData : files) {
             if (fileData.isSelected()) {
                 mDatabaseManager.deleteFile(fileData);
-                fileData.setIsCompleted(false);
             }
         }
 
-        showPopulatedFragmentState();
+        final boolean shouldDisplayNonSavedFiles = shouldDisplayNonSavedFiles();
+        if (shouldDisplayNonSavedFiles) {
+            markSelectedFilesAsNonSaved(files);
+        } else {
+            populateNonSelectedFiles(files);
+        }
+    }
+
+    private void markSelectedFilesAsNonSaved(final List<FileData> files) {
+        for (final FileData file : files) {
+            if (file.isSelected()) {
+               file.setIsCompleted(false);
+            }
+        }
+    }
+
+    private void populateNonSelectedFiles(final List<FileData> files) {
+        mFilesAdaptor.clear();
+        for (final FileData file : files) {
+            if (!file.isSelected()) {
+                mFilesAdaptor.add_items(file);
+            }
+        }
     }
 
     private void deSelect() {
@@ -257,24 +281,10 @@ public abstract class MainFragment extends Fragment {
                 file.setIsSelected(false);
             }
         }
-
-        mMultiFileSelector.exitActionMode();
-        showPopulatedFragmentState();
-//        mFilesAdaptor.notifyDataSetChanged();
-//        Handler handler = new Handler();
-//        handler.postDelayed(new Runnable() {
-//            @Override
-//            public void run() {
-//                ArrayList<FileData> mItems = mFilesAdaptor.getAdapterItems();
-//                for (final FileData fileData : mItems) {
-//                    fileData.setIsDisplaySelected(false);
-//                }
-//
-//            }
-//        }, 500);
     }
 
     public void incrementViewsByOne(final String fileId) {
+        Log.i(TAG, "Requesting to increment views by one. file ID=" + fileId);
         mRenServiceClient.incrementViewsByOne(fileId,
                 new RENServiceClient.IncrementViewsCallback() {
                     @Override
@@ -427,7 +437,7 @@ public abstract class MainFragment extends Fragment {
                 }
 
                 incrementViewsByOne(file.getFileId());
-                mFilesAdaptor.notifyDataSetChanged();
+                showPopulatedFragmentState();
             }
 
             @Override

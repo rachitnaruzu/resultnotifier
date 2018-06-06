@@ -18,4 +18,9 @@ public class RecentFragment extends MainFragment {
     public boolean shouldHonourOffset() {
         return true;
     }
+
+    @Override
+    public boolean shouldDisplayNonSavedFiles() {
+        return true;
+    }
 }
