@@ -7,7 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
-import com.resultnotifier.main.CommonUtility;
+import com.resultnotifier.main.Config;
 import com.resultnotifier.main.FileData;
 import com.resultnotifier.main.ui.filter.FilterItem;
 
@@ -16,121 +16,121 @@ import java.util.ArrayList;
 public class DatabaseManager extends SQLiteOpenHelper {
     private static final String TAG = "REN_DatabaseManager";
 
-    private static final String NAME = CommonUtility.APP_NAME;
+    private static final String NAME = Config.APP_NAME;
     private static final int VERSION = 1;
     private static final int CHECKED = 1;
 
     private static final String TABLE_FILES = "files";
-    private static final String _ID = "_id";
-    private static final String DISPLAY_NAME = "displayname";
-    private static final String FILE_ID = "fileid";
-    private static final String URL = "url";
-    private static final String FILE_TYPE = "filetype";
-    private static final String DATA_TYPE = "datatype";
-    private static final String DATE_CREATED = "datecreated";
-    private static final String VIEWS = "views";
-    private static final String SELF_VIEWS = "selfviews";
+    private static final String COLUMN_ID = "_id";
+    private static final String COLUMN_DISPLAY_NAME = "displayname";
+    private static final String COLUMN_FILE_ID = "fileid";
+    private static final String COLUMN_URL = "url";
+    private static final String COLUMN_FILE_TYPE = "filetype";
+    private static final String COLUMN_DATA_TYPE = "datatype";
+    private static final String COLUMN_DATE_CREATED = "datecreated";
+    private static final String COLUMN_VIEWS = "views";
+    private static final String COLUMN_SELF_VIEWS = "selfviews";
     private static final String TABLE_DATA_TYPES = "datatypes";
     private static final String IS_CHECKED = "ischecked";
 
     private static final String CREATE_CMD =
             "CREATE TABLE " + TABLE_FILES + " ("
-                    + _ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
-                    + DISPLAY_NAME + " TEXT NOT NULL, "
-                    + FILE_ID + " TEXT NOT NULL, "
-                    + URL + " TEXT NOT NULL, "
-                    + FILE_TYPE + " TEXT NOT NULL, "
-                    + DATA_TYPE + " TEXT NOT NULL, "
-                    + DATE_CREATED + " TEXT NOT NULL, "
-                    + VIEWS + " INTEGER, "
-                    + SELF_VIEWS + " INTEGER"
+                    + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                    + COLUMN_DISPLAY_NAME + " TEXT NOT NULL, "
+                    + COLUMN_FILE_ID + " TEXT NOT NULL, "
+                    + COLUMN_URL + " TEXT NOT NULL, "
+                    + COLUMN_FILE_TYPE + " TEXT NOT NULL, "
+                    + COLUMN_DATA_TYPE + " TEXT NOT NULL, "
+                    + COLUMN_DATE_CREATED + " TEXT NOT NULL, "
+                    + COLUMN_VIEWS + " INTEGER, "
+                    + COLUMN_SELF_VIEWS + " INTEGER"
                     + ")";
 
     private static final String GET_ALL_FILES_CMD =
             "SELECT "
-                    + DISPLAY_NAME + ","
-                    + FILE_ID + ","
-                    + URL + ","
-                    + FILE_TYPE + ","
-                    + DATA_TYPE + ","
-                    + DATE_CREATED + ","
-                    + VIEWS + ", "
-                    + SELF_VIEWS + " "
-                    + "FROM " + TABLE_FILES + " ORDER BY date(" + DATE_CREATED + ") DESC, " + DISPLAY_NAME + ";";
+                    + COLUMN_DISPLAY_NAME + ","
+                    + COLUMN_FILE_ID + ","
+                    + COLUMN_URL + ","
+                    + COLUMN_FILE_TYPE + ","
+                    + COLUMN_DATA_TYPE + ","
+                    + COLUMN_DATE_CREATED + ","
+                    + COLUMN_VIEWS + ", "
+                    + COLUMN_SELF_VIEWS + " "
+                    + "FROM " + TABLE_FILES + " ORDER BY date(" + COLUMN_DATE_CREATED + ") DESC, " + COLUMN_DISPLAY_NAME + ";";
 
     private static final String FILE_PRESENCE_CMD =
-            "SELECT " + FILE_ID + " FROM "
+            "SELECT " + COLUMN_FILE_ID + " FROM "
                     + TABLE_FILES + " WHERE "
-                    + FILE_ID + " = ? LIMIT 1";
+                    + COLUMN_FILE_ID + " = ? LIMIT 1";
 
     private static final String CREATE_TABLE_DATA_TYPES_CMD =
             "CREATE TABLE " + TABLE_DATA_TYPES + " ("
-                    + _ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
-                    + DATA_TYPE + " TEXT NOT NULL, "
+                    + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                    + COLUMN_DATA_TYPE + " TEXT NOT NULL, "
                     + IS_CHECKED + " INTEGER"
                     + ")";
 
     private static final String GET_ALL_FILTER_ITEMS_CMD =
-            "SELECT " + DATA_TYPE + ","
+            "SELECT " + COLUMN_DATA_TYPE + ","
                     + IS_CHECKED + " "
                     + "FROM " + TABLE_DATA_TYPES;
 
     private static final String UPDATE_DATA_TYPE_CHECK_CMD =
             "UPDATE " + TABLE_DATA_TYPES + " "
                     + "SET " + IS_CHECKED + " = ? "
-                    + "WHERE " + DATA_TYPE + " = ?";
+                    + "WHERE " + COLUMN_DATA_TYPE + " = ?";
 
     private static final String DATA_TYPE_PRESENCE_CMD =
-            "SELECT " + DATA_TYPE + " FROM "
+            "SELECT " + COLUMN_DATA_TYPE + " FROM "
                     + TABLE_DATA_TYPES + " WHERE "
-                    + DATA_TYPE + " = ? LIMIT 1";
+                    + COLUMN_DATA_TYPE + " = ? LIMIT 1";
 
     private static final String GET_ALL_CHECKED_FILTER_ITEMS =
-            "SELECT " + DATA_TYPE + " FROM "
+            "SELECT " + COLUMN_DATA_TYPE + " FROM "
                     + TABLE_DATA_TYPES + " WHERE "
                     + IS_CHECKED + " = 1";
 
     private static final String DELETE_FILE_CMD =
             "DELETE FROM " + TABLE_FILES + " "
-                    + "WHERE " + FILE_ID + " = ?";
+                    + "WHERE " + COLUMN_FILE_ID + " = ?";
 
     private static final String UPDATE_VIEWS_CMD =
             "UPDATE " + TABLE_FILES + " "
-                    + "SET " + VIEWS + " = ?, "
-                    + SELF_VIEWS + " = ? "
-                    + "WHERE " + FILE_ID + " = ?";
+                    + "SET " + COLUMN_VIEWS + " = ?, "
+                    + COLUMN_SELF_VIEWS + " = ? "
+                    + "WHERE " + COLUMN_FILE_ID + " = ?";
 
     private static final String INCREMENT_VIEWS_BY_ONE_CMD =
             "UPDATE " + TABLE_FILES + " "
-                    + "SET " + VIEWS + " = " + VIEWS + " + 1 "
-                    + "WHERE " + FILE_ID + " = ?";
+                    + "SET " + COLUMN_VIEWS + " = " + COLUMN_VIEWS + " + 1 "
+                    + "WHERE " + COLUMN_FILE_ID + " = ?";
 
     private static final String INCREMENT_SELF_VIEWS_BY_ONE_CMD =
             "UPDATE " + TABLE_FILES + " "
-                    + "SET " + SELF_VIEWS + " = " + SELF_VIEWS + " + 1 "
-                    + "WHERE " + FILE_ID + " = ?";
+                    + "SET " + COLUMN_SELF_VIEWS + " = " + COLUMN_SELF_VIEWS + " + 1 "
+                    + "WHERE " + COLUMN_FILE_ID + " = ?";
 
     private static final String GET_ALL_FILES_FILTERED_CMD_PREFIX =
             "SELECT "
-                    + DISPLAY_NAME + ","
-                    + FILE_ID + ","
-                    + URL + ","
-                    + FILE_TYPE + ","
-                    + DATA_TYPE + ","
-                    + DATE_CREATED + ","
-                    + VIEWS + ", "
-                    + SELF_VIEWS + " "
+                    + COLUMN_DISPLAY_NAME + ","
+                    + COLUMN_FILE_ID + ","
+                    + COLUMN_URL + ","
+                    + COLUMN_FILE_TYPE + ","
+                    + COLUMN_DATA_TYPE + ","
+                    + COLUMN_DATE_CREATED + ","
+                    + COLUMN_VIEWS + ", "
+                    + COLUMN_SELF_VIEWS + " "
                     + "FROM " + TABLE_FILES + " "
-                    + "WHERE " + DATA_TYPE + " IN ";
+                    + "WHERE " + COLUMN_DATA_TYPE + " IN ";
 
     private static final String GET_ALL_FILES_FILTERED_CMD_SUFFIX =
-            " ORDER BY date(" + DATE_CREATED + ") DESC, " + DISPLAY_NAME + ";";
+            " ORDER BY date(" + COLUMN_DATE_CREATED + ") DESC, " + COLUMN_DISPLAY_NAME + ";";
 
     private static final String TABLE_SETTINGS = "settings";
     private static final String VARIABLE = "variable";
     private static final String CREATE_TABLE_SETTINGS_CMD =
             "CREATE TABLE " + TABLE_SETTINGS + " ("
-                    + _ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
+                    + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                     + VARIABLE + " TEXT NOT NULL, "
                     + IS_CHECKED + " INTEGER"
                     + ")";
@@ -201,7 +201,7 @@ public class DatabaseManager extends SQLiteOpenHelper {
         StringBuilder datatypes = new StringBuilder("(");
         if (cursor.moveToFirst()) {
             do {
-                String datatype = cursor.getString(cursor.getColumnIndex(DATA_TYPE));
+                String datatype = cursor.getString(cursor.getColumnIndex(COLUMN_DATA_TYPE));
                 datatypes.append("'" + datatype + "'" + ",");
             } while (cursor.moveToNext());
         } else return "()";
@@ -215,7 +215,7 @@ public class DatabaseManager extends SQLiteOpenHelper {
         ContentValues values = new ContentValues();
         String is_checked = "0";
         if (filterItem.isChecked()) is_checked = "1";
-        values.put(DATA_TYPE, filterItem.getDataType());
+        values.put(COLUMN_DATA_TYPE, filterItem.getDataType());
         values.put(IS_CHECKED, is_checked);
         db.insert(TABLE_DATA_TYPES, null, values);
         //db.close();
@@ -234,7 +234,7 @@ public class DatabaseManager extends SQLiteOpenHelper {
         Cursor cursor = db.rawQuery(GET_ALL_FILTER_ITEMS_CMD, null);
         if (cursor.moveToFirst()) {
             do {
-                final String dataType = cursor.getString(cursor.getColumnIndex(DATA_TYPE));
+                final String dataType = cursor.getString(cursor.getColumnIndex(COLUMN_DATA_TYPE));
                 final boolean isChecked =
                         cursor.getInt(cursor.getColumnIndex(IS_CHECKED)) == CHECKED;
                 final FilterItem filterItem = new FilterItem(dataType, isChecked);
@@ -250,13 +250,13 @@ public class DatabaseManager extends SQLiteOpenHelper {
     public void addFileData(FileData filedata) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put(DISPLAY_NAME, filedata.getDisplayName());
-        values.put(FILE_ID, filedata.getFileId());
-        values.put(URL, filedata.getUrl());
-        values.put(FILE_TYPE, filedata.getFileType());
-        values.put(DATA_TYPE, filedata.getDataType());
-        values.put(DATE_CREATED, filedata.getDateCreated());
-        values.put(VIEWS, filedata.getViews());
+        values.put(COLUMN_DISPLAY_NAME, filedata.getDisplayName());
+        values.put(COLUMN_FILE_ID, filedata.getFileId());
+        values.put(COLUMN_URL, filedata.getUrl());
+        values.put(COLUMN_FILE_TYPE, filedata.getFileType());
+        values.put(COLUMN_DATA_TYPE, filedata.getDataType());
+        values.put(COLUMN_DATE_CREATED, filedata.getDateCreated());
+        values.put(COLUMN_VIEWS, filedata.getViews());
         db.insert(TABLE_FILES, null, values);
         //db.close();
     }
@@ -284,14 +284,14 @@ public class DatabaseManager extends SQLiteOpenHelper {
         if (cursor.moveToFirst()) {
             do {
                 FileData filedata = new FileData();
-                filedata.setDisplayName(cursor.getString(cursor.getColumnIndex(DISPLAY_NAME)));
-                filedata.setFileType(cursor.getString(cursor.getColumnIndex(FILE_TYPE)));
-                filedata.setFileId(cursor.getString(cursor.getColumnIndex(FILE_ID)));
-                filedata.setDateCreated(cursor.getString(cursor.getColumnIndex(DATE_CREATED)));
-                filedata.setDataType(cursor.getString(cursor.getColumnIndex(DATA_TYPE)));
-                filedata.setUrl(cursor.getString(cursor.getColumnIndex(URL)));
-                filedata.setViews("" + cursor.getInt(cursor.getColumnIndex(VIEWS)));
-                filedata.setSelfViews("" + cursor.getInt(cursor.getColumnIndex(SELF_VIEWS)));
+                filedata.setDisplayName(cursor.getString(cursor.getColumnIndex(COLUMN_DISPLAY_NAME)));
+                filedata.setFileType(cursor.getString(cursor.getColumnIndex(COLUMN_FILE_TYPE)));
+                filedata.setFileId(cursor.getString(cursor.getColumnIndex(COLUMN_FILE_ID)));
+                filedata.setDateCreated(cursor.getString(cursor.getColumnIndex(COLUMN_DATE_CREATED)));
+                filedata.setDataType(cursor.getString(cursor.getColumnIndex(COLUMN_DATA_TYPE)));
+                filedata.setUrl(cursor.getString(cursor.getColumnIndex(COLUMN_URL)));
+                filedata.setViews("" + cursor.getInt(cursor.getColumnIndex(COLUMN_VIEWS)));
+                filedata.setSelfViews("" + cursor.getInt(cursor.getColumnIndex(COLUMN_SELF_VIEWS)));
                 mItems.add(filedata);
             } while (cursor.moveToNext());
         }
