@@ -21,6 +21,8 @@ import android.widget.ListView;
 
 import com.resultnotifier.main.AppState;
 import com.resultnotifier.main.db.DatabaseManager;
+import com.resultnotifier.main.notification.FCMTokenReceiverService;
+import com.resultnotifier.main.notification.FCMTokenUpdaterService;
 import com.resultnotifier.main.ui.drawer.NavDrawerItem;
 import com.resultnotifier.main.ui.drawer.NavDrawerListAdapter;
 import com.resultnotifier.main.R;
@@ -103,9 +105,18 @@ public class MainActivity extends AppCompatActivity {
         }
 
         mDatabaseManager = AppState.getDatabaseManager(getApplicationContext());
+        updateFcmToken();
 
         getSupportActionBar().setHomeButtonEnabled(true);
         Log.i(TAG, "MainActivity created");
+    }
+
+
+    private void updateFcmToken() {
+        Log.i(TAG, "Requesting to update FCM token");
+        final Intent fcmTokeUpdaterServiceIntent =
+                new Intent(this, FCMTokenUpdaterService.class);
+        startService(fcmTokeUpdaterServiceIntent);
     }
 
     /**
