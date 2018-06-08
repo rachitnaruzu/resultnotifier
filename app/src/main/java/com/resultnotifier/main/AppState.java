@@ -1,6 +1,7 @@
 package com.resultnotifier.main;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 
 import com.resultnotifier.main.db.DatabaseManager;
 import com.resultnotifier.main.downloader.FileDownloader;
@@ -22,6 +23,7 @@ public class AppState {
     private static DataLoader SAVED_DATA_LOADER;
     private static DataLoader TOP_MOST_DATA_LOADER;
     private static DatabaseManager DATABASE_MANAGER;
+    private static SharedPreferences SHARED_PREFERENCES;
 
     public static RENServiceClient getRenServiceClient(final Context context) {
         if (REN_SERVICE_CLIENT == null) {
@@ -80,11 +82,20 @@ public class AppState {
 
     public static DataLoader getSavedDataLoader(final Context context) {
         if (SAVED_DATA_LOADER == null) {
-            final RENServiceClient renServiceClient = getRenServiceClient(context);
             final DatabaseManager databaseManager = getDatabaseManager(context);
             SAVED_DATA_LOADER = new SavedDataLoader(databaseManager);
         }
 
         return SAVED_DATA_LOADER;
+    }
+
+    public static SharedPreferences getSharedPreferences(final Context context) {
+        if (SHARED_PREFERENCES == null) {
+            SHARED_PREFERENCES =
+                    context.getSharedPreferences(Config.APPLICATION_QUANTIFIER,
+                            Context.MODE_PRIVATE);
+        }
+
+        return SHARED_PREFERENCES;
     }
 }

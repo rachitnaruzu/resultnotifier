@@ -7,7 +7,7 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
-import com.resultnotifier.main.CommonUtility;
+import com.resultnotifier.main.Config;
 import com.resultnotifier.main.FileData;
 
 import org.json.JSONArray;
@@ -26,7 +26,7 @@ import java.util.TimeZone;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import static com.resultnotifier.main.CommonUtility.DOMAIN;
+import static com.resultnotifier.main.Config.DOMAIN;
 
 public class RENServiceClientImpl implements RENServiceClient {
     public static final int HTTP_INTERNAL_SERVER_ERROR = 500;
@@ -37,6 +37,7 @@ public class RENServiceClientImpl implements RENServiceClient {
     private static final String INCREMENT_VIEW_URL = DOMAIN + "/incrementviews/";
     private static final String FETCH_DATA_TYPES = DOMAIN + "/datatypes/";
     private static final String RECENT_URL = DOMAIN + "/recent/";
+    private static final String TOKEN_UPDATE_URL = DOMAIN + "/register/";
     private static final char[] HEX_ARRAY = "0123456789abcdef".toCharArray();
     private MyHTTPHandler mMyHttpHandler;
 
@@ -166,6 +167,36 @@ public class RENServiceClientImpl implements RENServiceClient {
         mMyHttpHandler.addToRequestQueue(fetchRequest);
     }
 
+    @Override
+    public void updateToken(final String token, final UpdateTokenCallback updateTokenCallback) {
+        Log.i(TAG, "Updating token=" + token);
+
+        final Response.Listener<JSONObject> successResponseListener =
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(final JSONObject response) {
+                        Log.i(TAG, "Successfully updated tokens. response=" + response);
+                        updateTokenCallback.onSuccess();
+                    }
+                };
+
+        final Response.ErrorListener errorResponseListener = new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(final VolleyError error) {
+                Log.e(TAG, "Unable to update token=" + token, error);
+                updateTokenCallback.onError(HTTP_INTERNAL_SERVER_ERROR);
+            }
+        };
+
+        final Map<String, String> params = getSecureParams();
+        params.put("registration_id", token);
+        final CustomRequest fetchRequest = new CustomRequest(Request.Method.POST,
+                TOKEN_UPDATE_URL, params, successResponseListener,
+                errorResponseListener);
+
+        mMyHttpHandler.addToRequestQueue(fetchRequest);
+    }
+
     private void fetchFiles(final int offset, final String dataType, final String url,
                             final FetchFilesCallback fetchFilesCallback) {
         final Map<String, String> params = getSecureParams();
@@ -233,7 +264,7 @@ public class RENServiceClientImpl implements RENServiceClient {
     private Map<String, String> addSecureParams(Map<String, String> params) {
         String ts = getEncodedTimestamp();
         params.put("sec", ts);
-        params.put("sig", encodeStringData(CommonUtility.SECRET_KEY, ts));
+        params.put("sig", encodeStringData(Config.SECRET_KEY, ts));
         return params;
     }
 

@@ -1,8 +1,5 @@
 package com.resultnotifier.main.service;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-
 import com.resultnotifier.main.FileData;
 
 import java.util.ArrayList;
@@ -23,18 +20,24 @@ public interface RENServiceClient {
 
     void fetchDataTypes(final FetchDataTypesCallback fetchDataTypesCallback);
 
+    void updateToken(final String token, final UpdateTokenCallback updateTokenCallback);
+
     interface FetchFilesCallback {
         void onSuccess(final List<FileData> files);
         void onError(final int error);
     }
 
-    interface IncrementViewsCallback {
+    interface Callback {
         void onSuccess();
         void onError(final int error);
     }
+
+    interface IncrementViewsCallback extends Callback { }
 
     interface FetchDataTypesCallback {
         void onSuccess(final List<String> dataTypes);
         void onError(final int error);
     }
+
+    interface UpdateTokenCallback extends Callback { }
 }
