@@ -23,8 +23,9 @@ UPDATE_FILE_VIEWS = "UPDATE files SET views = views + %s WHERE fileid = %s;"
 
 GET_ALL_DATA_TYPES = "SELECT DISTINCT(datatype) FROM files;"
 
-ALPHA = "0.5"
-UPDATE_AVGHITS_CMD = "UPDATE files SET oldviews = Temp.views, avghits = " + ALPHA + " * Temp.hits + " + ALPHA + " * avghits FROM (SELECT fileid, views, (views - oldviews) as hits FROM files) as Temp WHERE files.fileid = Temp.fileid;"
+ALPHA = 0.5
+UPDATE_AVGHITS_CMD = "UPDATE files SET oldviews = Temp.views, avghits = " + str(ALPHA) + " * Temp.hits + " + str((1-ALPHA)) + " * avghits FROM (SELECT fileid, views, (views - oldviews) as hits FROM files) as Temp WHERE files.fileid = Temp.fileid;"
+CLEAR_LOW_AVG_HITS = "UPDATE files SET avghits = 0 WHERE avghits != 0 AND avghits < power(10,-40);"
 
 GET_RECENT_FILES_CMD = """ SELECT fileid,displayname,url,datatype,filetype,datecreated,
 views FROM files WHERE avghits > 0 ORDER BY avghits DESC, views OFFSET %s LIMIT 10; """
@@ -117,6 +118,9 @@ class DatabaseUtility(object):
         self.cur.execute(GET_ALL_FILEIDS)
         rows = self.cur.fetchall()
         return [row[0] for row in rows]
+
+    def clear_low_average_hits(self):
+        self.cur.execute(CLEAR_LOW_AVG_HITS)
         
     def get_data_types(self):
         self.cur.execute(GET_ALL_DATA_TYPES)
