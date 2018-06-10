@@ -8,6 +8,7 @@ FETCH_CMD2 = "SELECT registrationid FROM (SELECT registrationid FROM users WHERE
 FILE_PRESENCE_CMD = "SELECT fileid FROM files WHERE fileid = %s;"
 INSERT_FILE_CMD = "INSERT INTO files (fileid,displayname,url,datatype,filetype,datecreated,views) VALUES (%s, %s, %s, %s, %s,%s, %s);"
 
+GET_ALL_FILEIDS = "SELECT fileid FROM files"
 GET_FILES_CMD = "SELECT fileid,displayname,url,datatype,filetype,datecreated,views FROM files ORDER BY datecreated DESC, displayname OFFSET %s LIMIT 10;"
 GET_FILES_FILTER_CMD_PREFIX = "SELECT fileid,displayname,url,datatype,filetype,datecreated,views FROM files WHERE datatype IN "
 GET_FILES_FILTER_CMD_SUFFIX = " ORDER BY datecreated DESC, displayname OFFSET %s LIMIT 10;"
@@ -108,6 +109,11 @@ class DatabaseUtility(object):
                     'views' : row[6]
                 } for row in rows]
         return files
+
+    def get_all_fileids(self):
+        self.cur.execute(GET_ALL_FILEIDS)
+        rows = self.cur.fetchall()
+        return [row[0] for row in rows]
         
     def get_data_types(self):
         self.cur.execute(GET_ALL_DATA_TYPES)

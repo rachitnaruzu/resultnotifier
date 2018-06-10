@@ -4,70 +4,72 @@ import datetime
 from databaseutil import DatabaseUtility
 import extractbeta as ex
 import config
+from oauth2client import service_account as sa
 
-contentType = "application/json"
-API_Key = "key=" + config.GCM_API_KEY
-url = "https://android.googleapis.com/gcm/send"
-headers = {'Content-Type':contentType,'Authorization':API_Key}
+CONTENT_TYPE = "application/json"
+API_KEY = "Bearer " + config.GCM_API_KEY
+FCM_SEND_URL = "https://fcm.googleapis.com/v1/projects/" + config.PROJECT_NAME + "/messages:send"
+FCM_SCOPES = ['https://www.googleapis.com/auth/firebase.messaging']
 
 
-dbutil = DatabaseUtility()
-			
-def generate_notifications(files):
-    notifications = []
+def get_and_save_new_files(files, dbutil):
+    new_files = []
     now = datetime.datetime.utcnow()
-    nowdate = str(now.year) + "-" + str(now.month) + "-" + str(now.day) + " " + str(now.hour) + ":" + str(now.minute) + ":" + str(now.second)
+    nowdate = str(now.year) + "-" + str(now.month) + "-" + str(now.day) + " " + str(now.hour) + ":" + str(now.minute) \
+              + ":" + str(now.second)
+    saved_fileids = set(dbutil.get_all_fileids())
     for file in files:
-        if not dbutil.is_file_present(file['fileid']):
+        if file['fileid'] not in saved_fileids:
             dbutil.insert_file(
-                    fileid = file['fileid'], 
-                    displayname = file['displayname'], 
-                    url = file['url'], 
-                    datatype = file['datatype'], 
-                    filetype = file['filetype'], 
-                    datecreated = nowdate,
-                    views = 0
-                )
-            notifications.append({
-                    'fileid' : file['fileid'], 
-                    'displayname' : file['displayname'], 
-                    'url' : file['url'], 
-                    'datatype' : file['datatype'], 
-                    'filetype' : file['filetype'], 
-                    'datecreated' : nowdate,
-                    'views' : 0
-                })
-    print(notifications)
-    return notifications
+                fileid=file['fileid'],
+                displayname=file['displayname'],
+                url=file['url'],
+                datatype=file['datatype'],
+                filetype=file['filetype'],
+                datecreated=nowdate,
+                views=0
+            )
+            new_files.append(file)
 
-def get_registration_ids():
+    print("New files=" + str(new_files))
+    return new_files
+
+
+def get_registration_ids(dbutil):
     registration_ids = dbutil.get_all_registrationids()
     return registration_ids
-    
-def send(notifications, registration_ids):
-    for notification in notifications:
-        data = {'registration_ids':registration_ids,'data':notification}
-        resp = rq.post(url, data=json.dumps(data), headers=headers)
-        print(resp.status_code, resp.reason)
 
-def send_notifications(registration_ids,notifications):
-    length = len(registration_ids)
-    offset = 0
-    mod = 997
-    iter = int(length/mod)
-    for it in range(0,iter):
-        send(notifications,registration_ids[offset:offset+mod])
-        offset += mod
-    rem = length%mod
-    send(notifications,registration_ids[offset:offset+rem])
+
+def get_access_toke():
+    credentials = sa.ServiceAccountCredentials.from_json_keyfile_name(config.PROJECT_FCM_JSON_FILE, scopes=FCM_SCOPES)
+    access_token_info = credentials.get_access_token()
+    access_token = access_token_info.access_token
+    print("access_toke=" + access_token)
+    return access_token
+
+
+def send_fcm_notifications(registration_ids, new_files):
+    access_token = get_access_toke()
+    headers = {'Content-Type': CONTENT_TYPE, 'Authorization': 'Bearer ' + access_token}
+    for file in new_files:
+        for registration_id in registration_ids:
+            title = 'New ' + file['datatype'] + ' available'
+            body = file['displayname']
+            notification = {'title': title, 'body': body}
+            data = {'message': {'token': registration_id, 'notification': notification}}
+            print("sending notification=" + str(data))
+            resp = rq.post(FCM_SEND_URL, data=json.dumps(data), headers=headers)
+            print("notification response=" + resp.text)
+
 
 def fetch_and_generate():
-    newdata = ex.fetch()
-    notifications = generate_notifications(newdata)
-    registration_ids = get_registration_ids()
-    send_notifications(registration_ids, notifications)
+    dbutil = DatabaseUtility()
+    fetched_files = ex.fetch()
+    new_files = get_and_save_new_files(fetched_files, dbutil)
+    registration_ids = get_registration_ids(dbutil)
+    send_fcm_notifications(registration_ids, new_files)
     dbutil.close_connection()
     return "notifications successfully sent."
-    
+
+
 fetch_and_generate()
-    
