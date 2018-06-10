@@ -77,7 +77,7 @@ public class AppState {
             TOP_MOST_DATA_LOADER = new TopMostDataLoader(renServiceClient, databaseManager);
         }
 
-        return PUBLISHED_DATA_LOADER;
+        return TOP_MOST_DATA_LOADER;
     }
 
     public static DataLoader getSavedDataLoader(final Context context) {
