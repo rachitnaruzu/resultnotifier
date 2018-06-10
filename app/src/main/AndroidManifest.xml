@@ -32,6 +32,12 @@
         <service android:name=".notification.FCMTokenUpdaterService"
             android:exported="false"/>
 
+        <service android:name="com.resultnotifier.main.notification.FCMMessagingService">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+            </intent-filter>
+        </service>
+
         <activity
             android:name="com.resultnotifier.main.ui.filter.FilterActivity"
             android:label="@string/title_activity_filter" >
