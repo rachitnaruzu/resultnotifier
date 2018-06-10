@@ -4,6 +4,7 @@ import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 import android.util.Log;
@@ -46,11 +47,15 @@ public class FCMTokenUpdaterService extends IntentService {
     protected void onHandleIntent(@Nullable Intent intent) {
         Log.i(TAG, "Received request to update token");
         final String token = FirebaseInstanceId.getInstance().getToken();
-        updateToken(token);
+        if (token == null) {
+            Log.e(TAG, "Unable to update since token is null.");
+        } else {
+            updateToken(token);
+        }
     }
 
     @WorkerThread
-    public void updateToken(final String token) {
+    public void updateToken(@NonNull final String token) {
         Log.i(TAG, "Updating token=" + token);
 
         final String savedToken = mSharedPreferences.getString(TOKEN, null);
