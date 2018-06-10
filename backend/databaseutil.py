@@ -31,6 +31,9 @@ views FROM files WHERE avghits > 0 ORDER BY avghits DESC, views OFFSET %s LIMIT 
 GET_RECENT_FILES_FILTER_CMD_PREFIX = "SELECT fileid,displayname,url,datatype,filetype,datecreated,views FROM files WHERE datatype IN "
 GET_RECENT_FILES_FILTER_CMD_SUFFIX = " AND avghits > 0 ORDER BY avghits DESC, displayname OFFSET %s LIMIT 10;"
 
+DELETE_USERS_PREFIX = "DELETE FROM users WHERE registrationid IN "
+DELETE_USERS_SUFFIX = ";"
+
 CREATE_FILES_TABLE = """ CREATE TABLE files (
     fileid character varying(200) NOT NULL,
     displayname character varying(200),
@@ -127,6 +130,16 @@ class DatabaseUtility(object):
         
     def updatefileviews(self, fileid, selfviews):
         self.cur.execute(UPDATE_FILE_VIEWS, (selfviews, fileid))
+
+    def delete_users(self, registration_ids):
+        reg_ids = '(\'' + registration_ids[0] + '\''
+        for i in range(1, len(registration_ids)):
+            reg_ids = reg_ids + ',\'' + registration_ids[i] + '\''
+        reg_ids = reg_ids + ')'
+
+        print(reg_ids)
+        delete_users_cmd = DELETE_USERS_PREFIX + reg_ids + DELETE_USERS_SUFFIX
+        self.cur.execute(delete_users_cmd)
         
     def get_topmost_files(self, offset, datatypes):
         if datatypes == "()":

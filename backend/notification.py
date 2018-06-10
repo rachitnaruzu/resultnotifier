@@ -47,10 +47,16 @@ def get_access_toke():
     print("access_toke=" + access_token)
     return access_token
 
+def is_registration_id_not_registered(fcm_resp):
+    status_code = fcm_resp.status_code
+    if status_code == 404:
+        return True
+
 
 def send_fcm_notifications(registration_ids, new_files):
     access_token = get_access_toke()
     headers = {'Content-Type': CONTENT_TYPE, 'Authorization': 'Bearer ' + access_token}
+    unregistered_ids = []
     for file in new_files:
         for registration_id in registration_ids:
             title = 'New ' + file['datatype'] + ' available'
@@ -60,14 +66,25 @@ def send_fcm_notifications(registration_ids, new_files):
             print("sending notification=" + str(data))
             resp = rq.post(FCM_SEND_URL, data=json.dumps(data), headers=headers)
             print("notification response=" + resp.text)
+            if (is_registration_id_not_registered(resp)):
+                unregistered_ids.append(registration_id)
 
+    print("Unregistered IDs=" + str(unregistered_ids))
+    return unregistered_ids
+
+def remove_unregistered_ids(dbutil, unregistered_ids):
+    if len(unregistered_ids) == 0:
+        return
+
+    dbutil.delete_users(unregistered_ids)
 
 def fetch_and_generate():
     dbutil = DatabaseUtility()
     fetched_files = ex.fetch()
     new_files = get_and_save_new_files(fetched_files, dbutil)
     registration_ids = get_registration_ids(dbutil)
-    send_fcm_notifications(registration_ids, new_files)
+    unregistered_ids = send_fcm_notifications(registration_ids, new_files)
+    remove_unregistered_ids(dbutil, unregistered_ids)
     dbutil.close_connection()
     return "notifications successfully sent."
 
