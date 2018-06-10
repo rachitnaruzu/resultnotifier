@@ -140,7 +140,7 @@ public class MyAdaptor extends BaseAdapter {
         return month;
     }
 
-    private String getPrintableDate(String dateString) {
+    private String getPrintableDate(final String dateString) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         Date date1;
@@ -150,25 +150,29 @@ public class MyAdaptor extends BaseAdapter {
             Log.e(TAG, ex.getMessage());
             return dateString;
         }
-        Calendar cal1 = Calendar.getInstance();
-        cal1.setTime(date1);
-        cal1.setTimeZone(TimeZone.getDefault());
-        Calendar cal2 = Calendar.getInstance();
-        cal2.setTimeZone(TimeZone.getDefault());
-        if (cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR)) {
-            if (cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)) {
-                if (cal1.get(Calendar.AM_PM) == Calendar.AM) {
-                    return cal1.get(Calendar.HOUR_OF_DAY) + ":" + cal1.get(Calendar.MINUTE) + " AM";
+        Calendar date = Calendar.getInstance();
+        date.setTime(date1);
+        date.setTimeZone(TimeZone.getDefault());
+        Calendar now = Calendar.getInstance();
+        now.setTimeZone(TimeZone.getDefault());
+        if (date.get(Calendar.YEAR) == now.get(Calendar.YEAR)) {
+            if (date.get(Calendar.DAY_OF_YEAR) == now.get(Calendar.DAY_OF_YEAR)) {
+                if (date.get(Calendar.AM_PM) == Calendar.AM) {
+                    return date.get(Calendar.HOUR_OF_DAY) + ":" + date.get(Calendar.MINUTE) + " AM";
                 } else {
-                    return (cal1.get(Calendar.HOUR_OF_DAY) - 12) + ":" + cal1.get(Calendar.MINUTE) + " PM";
+                    if (date.get(Calendar.HOUR_OF_DAY) == 12) {
+                        return "12:" + date.get(Calendar.MINUTE) + " PM";
+                    } else {
+                        return (date.get(Calendar.HOUR_OF_DAY) - 12) + ":" + date.get(Calendar.MINUTE) + " PM";
+                    }
                 }
-            } else if (cal1.get(Calendar.DAY_OF_YEAR) + 1 == cal2.get(Calendar.DAY_OF_YEAR)) {
+            } else if (date.get(Calendar.DAY_OF_YEAR) + 1 == now.get(Calendar.DAY_OF_YEAR)) {
                 return "yesterday";
             }
-        } else if (cal1.get(Calendar.YEAR) + 1 == cal2.get(Calendar.YEAR) && cal1.get(Calendar.DAY_OF_YEAR) == cal1.getActualMaximum(Calendar.DAY_OF_YEAR)) {
+        } else if (date.get(Calendar.YEAR) + 1 == now.get(Calendar.YEAR) && date.get(Calendar.DAY_OF_YEAR) == date.getActualMaximum(Calendar.DAY_OF_YEAR)) {
             return "yesterday";
         }
-        return cal1.get(Calendar.DAY_OF_MONTH) + " " + getMonthForInt(cal1.get(Calendar.MONTH)) + ", " + cal1.get(Calendar.YEAR);
+        return date.get(Calendar.DAY_OF_MONTH) + " " + getMonthForInt(date.get(Calendar.MONTH)) + ", " + date.get(Calendar.YEAR);
     }
 
     private String getPrintableViews(int views) {
